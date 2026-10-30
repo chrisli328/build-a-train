@@ -1,0 +1,292 @@
+{
+ "car-loco": {
+  "file": "car-loco.webp",
+  "srcW": 345,
+  "srcH": 698
+ },
+ "car-wagon2": {
+  "file": "car-wagon2.webp",
+  "srcW": 351,
+  "srcH": 633
+ },
+ "car-wagon1": {
+  "file": "car-wagon1.webp",
+  "srcW": 351,
+  "srcH": 637
+ },
+ "car-tender": {
+  "file": "car-tender.webp",
+  "srcW": 366,
+  "srcH": 640
+ },
+ "car-caboose": {
+  "file": "car-caboose.webp",
+  "srcW": 327,
+  "srcH": 640
+ },
+ "crew-gunner": {
+  "file": "crew-gunner.webp",
+  "srcW": 273,
+  "srcH": 349
+ },
+ "crew-flamer": {
+  "file": "crew-flamer.webp",
+  "srcW": 287,
+  "srcH": 394
+ },
+ "crew-rocket": {
+  "file": "crew-rocket.webp",
+  "srcW": 278,
+  "srcH": 381
+ },
+ "crew-sniper": {
+  "file": "crew-sniper.webp",
+  "srcW": 269,
+  "srcH": 381
+ },
+ "crew-shotgun": {
+  "file": "crew-shotgun.webp",
+  "srcW": 271,
+  "srcH": 304
+ },
+ "crew-tesla": {
+  "file": "crew-tesla.webp",
+  "srcW": 317,
+  "srcH": 402
+ },
+ "crew-frost": {
+  "file": "crew-frost.webp",
+  "srcW": 280,
+  "srcH": 298
+ },
+ "crew-captain": {
+  "file": "crew-captain.webp",
+  "srcW": 288,
+  "srcH": 293
+ },
+ "z-walker": {
+  "file": "z-walker.webp",
+  "srcW": 241,
+  "srcH": 349
+ },
+ "z-hardhat": {
+  "file": "z-hardhat.webp",
+  "srcW": 252,
+  "srcH": 347
+ },
+ "z-pot": {
+  "file": "z-pot.webp",
+  "srcW": 252,
+  "srcH": 354
+ },
+ "z-runner": {
+  "file": "z-runner.webp",
+  "srcW": 260,
+  "srcH": 335
+ },
+ "z-bloater": {
+  "file": "z-bloater.webp",
+  "srcW": 287,
+  "srcH": 362
+ },
+ "z-brute": {
+  "file": "z-brute.webp",
+  "srcW": 319,
+  "srcH": 368
+ },
+ "z-shield": {
+  "file": "z-shield.webp",
+  "srcW": 229,
+  "srcH": 378
+ },
+ "z-yeti": {
+  "file": "z-yeti.webp",
+  "srcW": 383,
+  "srcH": 566
+ },
+ "tree-big": {
+  "file": "tree-big.webp",
+  "srcW": 298,
+  "srcH": 411
+ },
+ "tree-small": {
+  "file": "tree-small.webp",
+  "srcW": 212,
+  "srcH": 287
+ },
+ "rock-big": {
+  "file": "rock-big.webp",
+  "srcW": 304,
+  "srcH": 297
+ },
+ "rock-small": {
+  "file": "rock-small.webp",
+  "srcW": 240,
+  "srcH": 213
+ },
+ "cabin": {
+  "file": "cabin.webp",
+  "srcW": 323,
+  "srcH": 381
+ },
+ "campfire": {
+  "file": "campfire.webp",
+  "srcW": 282,
+  "srcH": 281
+ },
+ "crates": {
+  "file": "crates.webp",
+  "srcW": 272,
+  "srcH": 295
+ },
+ "barrels": {
+  "file": "barrels.webp",
+  "srcW": 239,
+  "srcH": 262
+ },
+ "car-wreck": {
+  "file": "car-wreck.webp",
+  "srcW": 322,
+  "srcH": 318
+ },
+ "barricade": {
+  "file": "barricade.webp",
+  "srcW": 277,
+  "srcH": 274
+ },
+ "signal": {
+  "file": "signal.webp",
+  "srcW": 156,
+  "srcH": 391
+ },
+ "snowman": {
+  "file": "snowman.webp",
+  "srcW": 268,
+  "srcH": 339
+ },
+ "coin": {
+  "file": "coin.webp",
+  "srcW": 214,
+  "srcH": 211
+ },
+ "gem": {
+  "file": "gem.webp",
+  "srcW": 222,
+  "srcH": 189
+ },
+ "xp": {
+  "file": "xp.webp",
+  "srcW": 171,
+  "srcH": 228
+ },
+ "chest-wood": {
+  "file": "chest-wood.webp",
+  "srcW": 225,
+  "srcH": 202
+ },
+ "chest-silver": {
+  "file": "chest-silver.webp",
+  "srcW": 219,
+  "srcH": 203
+ },
+ "chest-gold": {
+  "file": "chest-gold.webp",
+  "srcW": 224,
+  "srcH": 212
+ },
+ "skull": {
+  "file": "skull.webp",
+  "srcW": 196,
+  "srcH": 201
+ },
+ "fuel": {
+  "file": "fuel.webp",
+  "srcW": 182,
+  "srcH": 214
+ },
+ "wrench": {
+  "file": "wrench.webp",
+  "srcW": 228,
+  "srcH": 204
+ },
+ "heart": {
+  "file": "heart.webp",
+  "srcW": 223,
+  "srcH": 194
+ },
+ "bolt": {
+  "file": "bolt.webp",
+  "srcW": 153,
+  "srcH": 218
+ },
+ "star": {
+  "file": "star.webp",
+  "srcW": 218,
+  "srcH": 206
+ },
+ "shield": {
+  "file": "shield.webp",
+  "srcW": 194,
+  "srcH": 215
+ },
+ "crown": {
+  "file": "crown.webp",
+  "srcW": 211,
+  "srcH": 198
+ },
+ "lock": {
+  "file": "lock.webp",
+  "srcW": 169,
+  "srcH": 212
+ },
+ "train": {
+  "file": "train.webp",
+  "srcW": 241,
+  "srcH": 199
+ },
+ "helmet": {
+  "file": "helmet.webp",
+  "srcW": 223,
+  "srcH": 192
+ },
+ "map": {
+  "file": "map.webp",
+  "srcW": 237,
+  "srcH": 215
+ },
+ "gift": {
+  "file": "gift.webp",
+  "srcW": 209,
+  "srcH": 217
+ },
+ "daily": {
+  "file": "daily.webp",
+  "srcW": 219,
+  "srcH": 212
+ },
+ "trophy": {
+  "file": "trophy.webp",
+  "srcW": 228,
+  "srcH": 220
+ },
+ "home": {
+  "file": "home.webp",
+  "srcW": 241,
+  "srcH": 234
+ },
+ "bag": {
+  "file": "bag.webp",
+  "srcW": 205,
+  "srcH": 224
+ },
+ "gear": {
+  "file": "gear.webp",
+  "srcW": 223,
+  "srcH": 221
+ },
+ "play": {
+  "file": "play.webp",
+  "srcW": 219,
+  "srcH": 222
+ }
+}
