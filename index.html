@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#16204a">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Build A Train</title>
+<meta name="description" content="Ride an armoured train through the zombie snowlands. Your crew shoots by itself, you pick the track. Portrait mobile concept demo.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Build A Train">
+<meta property="og:description" content="Ride an armoured train through the zombie snowlands. Your crew shoots by itself, you pick the track. Portrait mobile concept demo.">
+<meta property="og:url" content="https://chrisli328.github.io/build-a-train/">
+<meta property="og:image" content="https://chrisli328.github.io/build-a-train/img/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="img/sprites/train.webp">
+<link rel="apple-touch-icon" href="img/icon-180.png">
+<link rel="preload" href="img/splash.webp" as="image" fetchpriority="high">
+<link rel="preload" href="vendor/fonts/LilitaOne-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="css/game.8ca81ca2a7.css">
+<link rel="modulepreload" href="js/main.2a76a94f92.js">
+<link rel="modulepreload" href="js/run.0c4606a54d.js">
+<link rel="modulepreload" href="js/data.972bde881f.js">
+<link rel="modulepreload" href="js/art.edf81c8392.js">
+<link rel="modulepreload" href="js/fx.39f2fad397.js">
+<link rel="modulepreload" href="js/ui.ab5462d339.js">
+<link rel="modulepreload" href="js/audio.548be9c6d4.js">
+<link rel="modulepreload" href="js/save.a9ab5db183.js">
+</head>
+<body data-lb="off">
+<div id="app">
+  <canvas id="game"></canvas>
+
+  <!-- lobby -->
+  <div id="lobby" class="screen hidden">
+    <div class="topbar">
+      <button class="btn cap fuel t t-thin" id="fuelPill"><img src="img/sprites/fuel.webp" alt=""><span id="fuelTxt">30/30</span><small class="t-thin" id="fuelSub">FULL</small></button>
+      <button class="btn cap coins t t-thin" id="coinPill"><img src="img/sprites/coin.webp" alt=""><span id="coinTxt">0</span><i class="plus">+</i></button>
+      <button class="btn cap gems t t-thin" id="gemPill"><img src="img/sprites/gem.webp" alt=""><span id="gemTxt">0</span><i class="plus">+</i></button>
+      <button class="btn gear" id="gearBtn"><img src="img/sprites/gear.webp" alt=""></button>
+    </div>
+
+    <div id="homePage" class="page">
+      <div class="stage">
+        <button class="btn arrow l" id="stagePrev"></button>
+        <div class="card">
+          <div class="chap t t-thin" id="chapTxt">CHAPTER 1</div>
+          <div class="name t" id="stageName">FROST LINE</div>
+          <div class="stars" id="stageStars"></div>
+        </div>
+        <button class="btn arrow r" id="stageNext"></button>
+      </div>
+      <div class="side left">
+        <button class="btn sbtn" id="patrolBtn"><span class="disc"><img src="img/sprites/chest-silver.webp" alt=""></span><span class="lbl t t-thin">Depot</span><span class="badge t-thin" id="patrolBadge">0</span></button>
+        <button class="btn sbtn" id="dailyBtn"><span class="disc"><img src="img/sprites/daily.webp" alt=""></span><span class="lbl t t-thin">Daily</span><span class="dot t-thin hidden" id="dailyDot">!</span></button>
+      </div>
+      <div class="side right">
+        <button class="btn sbtn" id="passBtn"><span class="disc"><img src="img/sprites/crown.webp" alt=""></span><span class="lbl t t-thin">Pass</span></button>
+        <button class="btn sbtn" id="eventBtn"><span class="disc"><img src="img/sprites/trophy.webp" alt=""></span><span class="lbl t t-thin">Convoy</span><span class="badge t-thin">2d 4h</span></button>
+      </div>
+      <div class="lineup" id="lineup"></div>
+      <button class="btn btn-yellow t" id="playBtn"><span>START</span><small class="cost t t-thin"><img src="img/sprites/fuel.webp" alt="">5</small></button>
+    </div>
+
+    <div id="crewPage" class="page sheet hidden"></div>
+    <div id="trainPage" class="page sheet hidden"></div>
+    <div id="shopPage" class="page sheet hidden"></div>
+    <div id="railsPage" class="page sheet hidden"></div>
+
+    <nav class="nav">
+      <button class="btn tab t t-thin" data-tab="shop"><img src="img/sprites/bag.webp" alt="">Shop</button>
+      <button class="btn tab t t-thin" data-tab="crew"><img src="img/sprites/helmet.webp" alt="">Crew<i class="dot hidden" id="crewDot">!</i></button>
+      <button class="btn tab t t-thin on" data-tab="home"><img src="img/sprites/play.webp" alt="">Battle</button>
+      <button class="btn tab t t-thin" data-tab="train"><img src="img/sprites/train.webp" alt="">Train</button>
+      <button class="btn tab t t-thin" data-tab="rails"><img src="img/sprites/map.webp" alt="">Rails</button>
+    </nav>
+  </div>
+
+  <!-- in run -->
+  <div id="hud" class="screen hidden">
+    <div class="progress">
+      <div class="track"><i class="fill" id="progFill"></i></div>
+      <img class="engine" id="progEngine" src="img/sprites/train.webp" alt="">
+      <div id="progNodes"></div>
+      <img class="goal" src="img/sprites/skull.webp" alt="">
+    </div>
+    <div class="row2">
+      <div class="lv t" id="lvBadge"><span id="lvTxt">1</span></div>
+      <div class="xp"><i id="xpFill"></i></div>
+      <div class="cap coins t t-thin" id="runCoins"><img src="img/sprites/coin.webp" alt=""><span id="runCoinTxt">0</span></div>
+    </div>
+    <div class="kills t t-thin"><img src="img/sprites/skull.webp" alt=""><span id="killTxt">0</span></div>
+    <button class="btn pause" id="pauseBtn"><i></i></button>
+    <div class="boss hidden" id="bossBar"><div class="name t t-thin">YETI KING</div><div class="bar"><i id="bossFill"></i></div></div>
+    <div class="combo t hidden" id="combo"></div>
+    <div class="routes hidden" id="routes">
+      <div class="ask t t-thin">PICK A TRACK!</div>
+      <button class="btn route l" data-side="-1"></button>
+      <button class="btn route r" data-side="1"></button>
+      <div class="timer"><i id="routeT"></i></div>
+    </div>
+    <button class="btn od" id="odBtn">
+      <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" class="bg"/><circle id="odRing" cx="50" cy="50" r="44" class="ring"/></svg>
+      <img src="img/sprites/bolt.webp" alt="">
+      <span class="lbl t t-thin">FULL STEAM</span>
+    </button>
+    <div id="banner" class="t"></div>
+  </div>
+
+  <div id="cards" class="screen hidden">
+    <div class="title t" id="cardsTitle">LEVEL UP!</div>
+    <div class="sub t t-thin" id="cardsSub">Pick one</div>
+    <div class="row" id="cardRow"></div>
+    <button class="btn btn-blue t t-thin reroll" id="rerollBtn"><img src="img/sprites/play.webp" alt="">Reroll</button>
+  </div>
+
+  <div id="result" class="screen hidden"></div>
+
+  <div id="fx"></div>
+  <div id="modalHost"></div>
+  <div id="curtain"></div>
+  <div id="overlayHost"></div>
+
+  <!-- loading -->
+  <div id="loading" class="screen">
+    <img class="splash" src="img/splash.webp" alt="Build A Train" fetchpriority="high" onload="this.classList.add('on')">
+    <div class="foot">
+      <div class="tip plate t t-thin" id="loadTip">Your crew shoots by itself. You pick the track!</div>
+      <div class="bar"><i id="loadBar"><img src="img/sprites/train.webp" alt=""></i><b class="pct t t-thin" id="loadPct">0%</b></div>
+    </div>
+  </div>
+</div>
+<script type="module" src="js/main.2a76a94f92.js"></script>
+</body>
+</html>
