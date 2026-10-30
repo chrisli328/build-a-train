@@ -536,7 +536,7 @@ export class Run {
   }
 
   damage(z, dmg, o = {}) {
-    if (z.dead) return;
+    if (z.dead || (z.boss && this.state === 'lose')) return; // a wrecked train cannot still win
     let crit = false;
     if (!o.small && Math.random() < this.mods.crit) { dmg *= 2; crit = true; }
     z.hp -= dmg; z.flash = 0.09;
