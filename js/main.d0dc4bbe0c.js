@@ -1,7 +1,7 @@
 // Screens and flow: loading, the depot lobby (train idling in the yard), crew and
 // train upgrade pages, the run with its HUD, level-up cards, routes and results.
 import { loadArt } from './art.edf81c8392.js';
-import { Run } from './run.0c4606a54d.js';
+import { Run } from './run.b2d5021a8d.js';
 import { CREW, ROUTES, STAGE } from './data.972bde881f.js';
 import { save, persist, tickFuel, MAX_FUEL, FUEL_COST, FUEL_MS, today, fmt, upCost } from './save.a9ab5db183.js';
 import { sfx, buzz, unlockAudio, applySettings, duckMusic } from './audio.548be9c6d4.js';
