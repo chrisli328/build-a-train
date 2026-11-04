@@ -3,23 +3,30 @@
 // The route is a line in world space with real turns and a loop round the boss at the end.
 // The game itself runs in a frame turned with the camera (th), so the train always heads up
 // the screen: at a turn the frame turns and everything on the ground turns with it (turnFrame).
-import { CREW, ZOMBIES, CARDS, ROUTES, STAGE, XP_NEED } from './data.6a0c6c4d8b.js';
+import { CREW, ZOMBIES, CARDS, ROUTES, STAGE, XP_NEED } from './data.086f335293.js';
 import { art, sprite, has, CAP, makeGroundTile, zombieStandIn, crewStandIn, carStandIn, propStandIn, text, roundRect, hpBar } from './art.27597f9460.js';
-import { Fx, fxs, tinted } from './fx.0af622b1de.js';
+import { Fx, fxs, tinted } from './fx.6462c7e2bb.js';
 import { sfx, buzz } from './audio.a7f44784ac.js';
+import { drawZRig, drawZBit, zrigHas, zrigArms } from './zrig.5451d869b2.js';
 
 // Yeti boss rig. Joints are fractions of the torso piece (x across, y down); pivots are fractions of each
 // part. unit = world units per source pixel, shared by every part so the generated sizes fit together.
 // what the swarm during the yeti fight is made of: mostly quick small zombies
-const BOSS_MIX = [['runner', 5], ['walker', 5], ['hardhat', 1.5]];
+// the yeti cycles its moves; a stomp when the engine is out of reach becomes a rock throw or frost breath
+const BOSS_SEQ = ['stomp', 'rock', 'stomp', 'breath'];
+const BOSS_LEAP = 0.62; // the stomp leap takes off this long before the stomp lands
+// round 20: the yeti is drawn 30% bigger, and stays this far from the red mark when it stomps (the stomp sends
+// a shock wave along the snow to the mark), so the train, the shots and the smoke do not hide it so easily
+const BOSS_K = 1.3, BOSS_STOMP_OFF = 150;
+const BOSS_MIX = [['runner', 2], ['walker', 5], ['hardhat', 1.5]]; // a runner roll is a pack of 2-4
 const YETI = {
-  unit: 0.16, caps: false,
+  unit: 0.16 * BOSS_K, caps: false,
   // hunched like the old yeti picture: the head sits low between the shoulders, the arms hang from the shoulder tops
   f: { torso: 'z-yeti-torso-f', head: 'z-yeti-head-f', roar: 'z-yeti-roar-f', arm: ['z-yeti-arm-l', 'z-yeti-arm-r'], leg: 'z-yeti-leg-f',
        neck: [0.5, 0.4], neckPx: 0.5, neckPivot: 0.93, headS: 0.8, sh: [[0.12, 0.24], [0.88, 0.24]], armPivot: 0.12, armS: 0.95,
        hips: [[0.33, 0.84], [0.67, 0.84]], legPx: 0.5, legPivot: 0.1, legS: 0.6, hipY: 0.84 },
   s: { torso: 'z-yeti-torso-s', head: 'z-yeti-head-s', roar: 'z-yeti-roar-s', arm: ['z-yeti-arm-l', 'z-yeti-arm-r'], leg: 'z-yeti-leg-s',
-       neck: [0.7, 0.42], neckPx: 0.53, neckPivot: 0.93, headS: 0.8, sh: [[0.29, 0.43], [0.62, 0.3]], armPivot: 0.12, armS: 0.95,
+       neck: [0.7, 0.42], neckPx: 0.53, neckPivot: 0.93, headS: 0.8, sh: [[0.45, 0.36], [0.62, 0.3]], armPivot: 0.12, armS: 0.95,
        hips: [[0.42, 0.84], [0.6, 0.84]], legPx: 0.4, legPivot: 0.1, legS: 0.75, hipY: 0.84 },
   b: { torso: 'z-yeti-torso-b', head: 'z-yeti-head-b', roar: 'z-yeti-head-b', arm: ['z-yeti-arm-r', 'z-yeti-arm-l'], leg: 'z-yeti-leg-f',
        neck: [0.5, 0.35], neckPx: 0.5, neckPivot: 0.93, headS: 0.8, sh: [[0.1, 0.3], [0.9, 0.3]], armPivot: 0.12, armS: 0.95,
@@ -30,6 +37,7 @@ const rand = (a, b) => a + Math.random() * (b - a);
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const sstep = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const sstep5 = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * t * (t * (6 * t - 15) + 10); };
 // generated world pieces: the rail tile is 9 sleepers long, cut into TILE_SLEEPERS track steps; signs list which way the art points
 const TILE_SLEEPERS = 18, TRACK_W = 84;
 const WORLD_SIGN = { repair: ['w-sign-green', -1], horde: ['w-sign-red', 1], supply: ['w-sign-yellow', -1], armory: ['w-sign-purple', 1] };
@@ -40,10 +48,13 @@ const GAP = -7, TRACK = 200, BRANCH = 96;   // negative gap: the couplers overla
 // Engine straight into gun wagons, no tender or caboose.
 // w = body width, sw = sprite width (the engine art has a pennant sticking out on the left, dx re-centres the body),
 // seats = [along the car from its middle (+ = front), across the car (+ = right)] as fractions of length and width.
+const HATCH_W = 43.6, HATCH_DY = 3.7; // gun hatch on the wagon art (car-hatch is cut from it): width, centre ahead of the seat
+// aim direction of each crew pose picture: right, down-right, down, up-right, up
+const POSE_A = [0, Math.PI / 4, Math.PI / 2, -Math.PI / 4, -Math.PI / 2];
 const CARS = {
   // the engine and wagon the owner picked back (2026-11-04): a slim real-looking engine with the
   // captain on the cab roof, wagons with the two hatches one behind the other so crew read clearly
-  loco:  { spr: 'car-loco', w: 86, sw: 86, dx: 0, l: 173, seats: [[-0.33, 0]], hp: 480 },
+  loco:  { spr: 'car-loco', w: 86, sw: 86, dx: 0, l: 173, seats: [[-0.24, 0]], hp: 480 },
   wagon: { spr: 'car-wagon-1', tiers: ['car-wagon-1', 'car-wagon-2', 'car-wagon-3'], w: 86, sw: 86, dx: 0, l: 180, seats: [[0.28, 0], [-0.16, 0]], hp: 220 },
 };
 const PROPS = [
@@ -76,7 +87,7 @@ export class Run {
     // starting line-up fills seats front to back: engine roof first, then each wagon
     const seats = this.cars.flatMap((c) => c.seats);
     (this.opts.lineup || ['captain']).forEach((t, i) => { if (t && seats[i]) this.putCrew(t, seats[i], true); });
-    this.zs = []; this.shots = []; this.drops = []; this.crates = []; this.signs = []; this.ui = [];
+    this.zs = []; this.shots = []; this.rocks = []; this.bits = []; this.frozenT = 0; this.drops = []; this.crates = []; this.signs = []; this.ui = [];
     this.lv = 1; this.xp = 0; this.coins = 0; this.kills = 0; this.combo = 0; this.comboT = 0; this.bestCombo = 0;
     this.mods = { rate: 1, dmg: 1, plow: 1, crit: 0.06, magnet: 1, xp: 1 };
     this.crewLv = {};
@@ -147,7 +158,8 @@ export class Run {
     for (const j of this.junctions) {
       if (d > j.d0 && d < j.d1) {
         const t = (d - j.d0) / (j.d1 - j.d0), s = side ?? (j.choice || -1);
-        return s * BRANCH * sstep(0, 0.3, t) * (1 - sstep(0.7, 1, t));
+        // quintic ease over 40% each end: the bend starts and ends gently, so the rails have no kink where curve meets straight
+        return s * BRANCH * sstep5(0, 0.4, t) * (1 - sstep5(0.6, 1, t));
       }
     }
     return 0;
@@ -162,11 +174,12 @@ export class Run {
   toF(x, y) { return { x: x * this.thC + y * this.thS, y: -x * this.thS + y * this.thC }; }
   toW(x, y) { return { x: x * this.thC - y * this.thS, y: x * this.thS + y * this.thC }; }
   fpt(d, lat = 0, side = 0) { const p = this.wpt(d, side, lat); return this.toF(p.x, p.y); }
-  // the camera turns with the line: through a real turn the whole world swings round the train
+  // the camera turns with the line: through a real turn the whole world swings round the train.
+  // Round the boss loop it keeps turning too, so the engine always points up the screen and the ring turns round the yeti
   turnStep(dt) {
-    const want = this.pathAt(Math.min(this.D - clamp(this.trainLen() * 0.15, 50, 120), this.loopD)).a;
+    const d = this.D - clamp(this.trainLen() * 0.15, 50, 120), want = this.pathAt(d).a;
     let da = want - this.th; da = Math.atan2(Math.sin(da), Math.cos(da));
-    if (Math.abs(this.D - this.lastD) < 150) da *= Math.min(1, dt * 2.2); // a test jump snaps straight there
+    if (Math.abs(this.D - this.lastD) < 150) da *= Math.min(1, dt * (d > this.loopD ? 6 : 2.2)); // a test jump snaps straight there
     this.lastD = this.D;
     if (Math.abs(da) > 1e-6) this.turnFrame(da);
   }
@@ -174,7 +187,14 @@ export class Run {
     this.th += da; this.thC = Math.cos(this.th); this.thS = Math.sin(this.th);
     const c = Math.cos(da), s = Math.sin(da);
     const R = (o, X = 'x', Y = 'y') => { const x = o[X], y = o[Y]; if (x === undefined || y === undefined) return; o[X] = x * c + y * s; o[Y] = -x * s + y * c; };
-    for (const z of this.zs) { R(z); R(z, 'vx', 'vy'); R(z, 'kx', 'ky'); if (z.tele) R(z.tele); }
+    for (const z of this.zs) {
+      R(z); R(z, 'vx', 'vy'); R(z, 'kx', 'ky'); if (z.tele) R(z.tele);
+      if (z.atk) { R(z.atk, 'tx', 'ty'); if (typeof z.atk.ang === 'number') z.atk.ang -= da; }
+      if (z.hand) R(z.hand); if (z.mouth) R(z.mouth); if (z.jump) { R(z.jump, 'x0', 'y0'); R(z.jump, 'x1', 'y1'); }
+      R(z, 'mvx', 'mvy'); if (typeof z.yaw === 'number') z.yaw += da;   // jointed zombies: walk direction and facing turn with the camera
+    }
+    for (const o of this.rocks) { R(o, 'gx0', 'gy0'); R(o, 'x1', 'y1'); }
+    for (const o of this.bits) { R(o); R(o, 'vx', 'vy'); o.rot -= da; }
     for (const o of this.drops) { R(o); R(o, 'vx', 'vy'); }
     for (const o of this.crates) R(o);
     for (const o of this.signs) R(o);
@@ -222,6 +242,7 @@ export class Run {
     if (this.state === 'lose') target = 0;
     const blocked = this.zs.some((z) => z.plowBlock);
     if (blocked) target *= 0.3;
+    if (this.frozenT > 0) { target *= 0.35; this.frozenT -= dt; if (this.frozenT <= 0) this.thaw(); }
     this.speed += (target - this.speed) * Math.min(1, dt * (target < this.speed ? 3 : 1.6));
     this.D += this.speed * dt;
     this.turnStep(dt);
@@ -239,6 +260,8 @@ export class Run {
     this.crewStep(dt);
     this.zombieStep(dt);
     this.shotStep(dt);
+    this.rockStep(dt);
+    this.bitStep(dt);
     this.dropStep(dt);
     this.crateStep();
     this.trainFx(dt);
@@ -320,6 +343,7 @@ export class Run {
       for (const [n, w] of mix) { if ((r -= w) < 0) { type = n; break; } }
       const roll = Math.random();
       // most of the horde comes in from the two sides, level with the car it wants
+      if (ZOMBIES[type].pack && roll < 0.84) { this.pack(type, v, roll < 0.12); continue; }
       if (roll < 0.12) this.spawn(type, rand(v.left + 14, v.right - 14), v.top - rand(25, 90));
       else if (roll < 0.84) { const li = STAGE.legs.indexOf(this.leg()), z = this.flank(type, v); for (let k = Math.random() < 0.25 + 0.15 * li ? 1 + Math.floor(rand(0, 1 + li)) : 0; k > 0; k--) { const q = this.spawn(type, z.x + Math.sign(z.x - this.cam.x) * rand(10, 50), z.y + rand(-40, 40)); q.pref = z.pref; q.rush = true; } }
       else if (roll < 0.95) this.burrow(type); else this.chaser(v);
@@ -354,6 +378,17 @@ export class Run {
     if (has('fx-snow-splash')) this.fx.spr(x, y - 6, 'fx-snow-splash', 46, { life: 0.35, grow: 1.5 });
     for (let i = 0; i < 7; i++) this.fx.dot(x, y, rand(-110, 110), rand(-80, 40), rand(2.5, 4.5), '#ffffff', 0.55, { vz: rand(120, 240), g: 520, ink: '#9fb3cc' });
     return z;
+  }
+  // runners hunt in packs: a few come out together from one side (or from ahead) and go for the same wagon
+  pack(type, v, ahead = false) {
+    const [lo, hi] = ZOMBIES[type].pack, li = STAGE.legs.indexOf(this.leg());
+    const n = Math.min(hi, lo + Math.floor(rand(0, 1 + li + (this.boss && !this.boss.dead ? 1 : 0))));
+    const lead = ahead ? this.spawn(type, rand(v.left + 30, v.right - 30), v.top - rand(25, 70)) : this.flank(type, v);
+    for (let k = 1; k < n; k++) {
+      const q = ahead ? this.spawn(type, lead.x + rand(-40, 40), lead.y - rand(10, 50)) : this.spawn(type, lead.x + Math.sign(lead.x - this.cam.x) * rand(12, 46), lead.y + rand(-34, 34));
+      q.pref = lead.pref; q.rush = lead.rush;
+    }
+    return lead;
   }
   chaser(v) {
     // runs up behind the last wagon that has crew on it (an empty tail wagon is not its target)
@@ -419,9 +454,12 @@ export class Run {
   buildBranches(j) {
     j.opts.forEach((key, i) => {
       const side = i ? 1 : -1;
-      const p = this.branchPoint(j, side, 0.12), sg = this.fpt(p.d + 30, side * 132);
+      // the arrow sign stands just before the fork, out past the car edge, so no car on any track ever runs under it
+      let lat = 98; const sd = j.d0 - 50;
+      while (lat < 200) { const w = this.wpt(sd, 0, side * lat); if (this.offTrack(w.x, w.y, sd, 90)) break; lat += 8; }
+      const sg = this.fpt(sd, side * lat);
       this.signs.push({ x: sg.x, y: sg.y, key, side, j });
-      if (key === 'supply') for (let k = 0; k < 7; k++) { const q = this.branchPoint(j, side, 0.3 + k * 0.06, rand(-6, 6)); this.crates.push({ x: q.x, y: q.y, d: q.d, kind: 'crates', j, side, hp: 1 }); }
+      if (key === 'supply') for (let k = 0; k < 6; k++) { const q = this.branchPoint(j, side, 0.2 + k * 0.12, rand(-3, 3)); this.crates.push({ x: q.x, y: q.y, d: q.d, kind: 'crates', j, side, hp: 1 }); }
       if (key === 'armory') { const q = this.branchPoint(j, side, 0.5); this.crates.push({ x: q.x, y: q.y, d: q.d, kind: 'armory', j, side, hp: 1 }); }
       if (key === 'repair') { const q = this.branchPoint(j, side, 0.5, side * 78); this.crates.push({ x: q.x, y: q.y, d: q.d, kind: 'repair', j, side, hp: 1, deco: true }); }
       if (key === 'horde') for (let k = 0; k < 20; k++) { const q = this.branchPoint(j, side, rand(0.25, 0.85), rand(-80, 80)); this.spawn(pick(['walker', 'walker', 'hardhat', 'runner']), q.x, q.y, { idle: true }); }
@@ -470,15 +508,42 @@ export class Run {
     const b = this.boss;
     if (!b || b.dead) return;
     // cracked: staggers for a moment, no stomps
-    if (b.stagger > 0) { b.stagger -= dt; if (b.tele) b.tele = null; return; }
+    if (b.stagger > 0) { b.stagger -= dt; if (b.tele) b.tele = null; b.atk = null; b.wave = null; return; }
     const loco = this.cars[0];
-    // stomps as soon as the engine is in reach, whether or not the train is on the loop yet
-    if (this.state === 'boss' && (b.tele || Math.hypot(loco.x - b.x, loco.y - b.y) < 300)) {
+    // stomps as soon as the engine is in reach, whether or not the train is on the loop yet;
+    // from further off it throws rocks, from middle range it breathes frost on the engine
+    const dl = Math.hypot(loco.x - b.x, loco.y - b.y);
+    if (b.atk) this.bossMove(b, dt);
+    else if (this.state === 'boss' && (b.tele || dl < 720)) {
       b.atkT -= dt;
-      if (b.atkT < 1.1 && !b.tele) { const p = this.fpt(loco.d + this.speed * 1.1); b.tele = { x: p.x, y: p.y, t: 0 }; }
+      if (b.atkT < 1.1 && b.jump && !b.tele) b.atkT = 1.1;      // picks its next move once it has landed
+      if (b.atkT < 1.1 && !b.tele) {
+        let mv = BOSS_SEQ[(b.seq = (b.seq || 0) + 1) % BOSS_SEQ.length];
+        // it leaps in for a stomp, so stomps reach further than they used to
+        if (mv === 'stomp' && dl >= 470) mv = dl < 360 ? 'breath' : 'rock';
+        if (mv === 'breath' && dl >= 360) mv = 'rock';
+        if (mv === 'stomp') { const p = this.fpt(loco.d + this.speed * 1.1); b.tele = { x: p.x, y: p.y, t: 0 }; }
+        else this.bossBegin(b, mv);
+      }
       if (b.tele) b.tele.t += dt;
       if (b.atkT <= 0 && b.tele) {
-        b.atkT = 2.9; const tx = b.tele.x, ty = b.tele.y; b.tele = null; b.slam = 0.35;
+        // round 20: the yeti lands BOSS_STOMP_OFF short of the mark; a shock wave runs over the snow to it, then it blows
+        b.atkT = 2.9; b.wave = { x0: b.x, y0: b.y, x1: b.tele.x, y1: b.tele.y, t: 0, T: 0.18, n: 0 }; b.tele = null; b.slam = 0.35;
+        this.fx.ring(b.x, b.y, 16, 120, '#d9f3ff', 0.4, 8);
+      }
+      const W = b.wave;
+      if (W) {
+        W.t += dt;
+        const N = 5, k = Math.min(1, W.t / W.T);
+        for (; W.n < N && W.n / N <= k; W.n++) {
+          const u = (W.n + 0.5) / N, wx = W.x0 + (W.x1 - W.x0) * u, wy = W.y0 + (W.y1 - W.y0) * u;
+          if (has('fx-snow-splash')) this.fx.spr(wx, wy - 6, 'fx-snow-splash', 40 + 14 * u, { life: 0.4, grow: 1.5 });
+          this.fx.decal(wx, wy, 13 + 6 * u, 'crater');
+          for (let i = 0; i < 3; i++) { const a = rand(0, Math.PI * 2); this.fx.dot(wx, wy, Math.cos(a) * 90, Math.sin(a) * 70, rand(3, 5), '#ffffff', 0.5, { vz: rand(80, 180), g: 600, ink: '#9fb4cc' }); }
+        }
+      }
+      if (W && W.t >= W.T) {
+        b.wave = null; const tx = W.x1, ty = W.y1;
         this.fx.boom(tx, ty, 60, { noDecal: false }); this.fx.ring(tx, ty, 20, 170, '#d9f3ff', 0.5, 9);
         for (let i = 0; i < 16; i++) { const a = rand(0, Math.PI * 2); this.fx.dot(tx, ty, Math.cos(a) * 200, Math.sin(a) * 160, rand(4, 7), '#ffffff', 0.7, { vz: rand(100, 260), g: 600, ink: '#9fb4cc' }); }
         let hit = false;
@@ -495,7 +560,7 @@ export class Run {
       b.roarT = 6;
       // each roar calls a ring of small zombies out of the snow round it
       for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2 + rand(-0.2, 0.2), d = rand(70, 130); this.spawn(i % 3 ? 'runner' : 'walker', b.x + Math.cos(a) * d, b.y + Math.sin(a) * d * 0.8); }
-      this.fx.label(b.x, b.y - 150, 'ROAR!', 30, '#ffffff', 1); this.fx.shake(0.35); sfx.boom(); b.roarA = 1;
+      this.fx.label(b.x, b.y - 150 * BOSS_K, 'ROAR!', 30, '#ffffff', 1); this.fx.shake(0.35, 0.6); sfx.boom(); b.roarA = 1;
     }
   }
 
@@ -520,14 +585,18 @@ export class Run {
       const c = s.crew;
       if (c.drop > 0) { c.drop = Math.max(0, c.drop - dt * 2.4); if (c.drop === 0) { this.fx.ring(s.x, s.y + 8, 6, 34, '#ffffff', 0.35, 4); this.fx.label(s.x, s.y - 34, 'NEW CREW!', 17, '#ffe066', 1.1); sfx.plow(); } continue; }
       c.recoil = Math.max(0, c.recoil - dt * 8);
-      if (s.car.broken || this.state === 'win') continue;
+      if (s.car.broken || this.state === 'win' || this.frozenT > 0 && s.car === this.cars[0]) continue;
       c.cd -= dt * this.rateMul(c);
-      const tgt = this.target(s, c.range);
+      // round 19: the harpooner keeps aiming down its own rope until the harpoon has reeled all the way back,
+      // and only then looks for a new target
+      const hp = c.kind === 'harpoon' && this.shots.find((q) => q.kind === 'harpoon' && q.seat === s);
+      const tgt = hp ? null : this.target(s, c.range);
       if (tgt) c.flip = tgt.x > s.x + 4;
-      const want = tgt ? Math.atan2(tgt.y - (s.y - 12), tgt.x - s.x) : c.idle + s.car.a;
+      else if (hp) c.flip = Math.cos(hp.a) > 0;
+      const want = hp ? hp.a : tgt ? Math.atan2((tgt.boss ? this.bodyY(tgt) + 12 : tgt.y) - (s.y - 12), tgt.x - s.x) : c.idle + s.car.a;
       let da = want - c.aimA; da = Math.atan2(Math.sin(da), Math.cos(da));
       if (c.sweepT > 0) c.sweepT -= dt; // the laser shot steers the arm while it sweeps
-      else c.aimA += da * Math.min(1, dt * (tgt ? 14 : 4));
+      else c.aimA += da * Math.min(1, dt * (tgt || hp ? 14 : 4));
       if (c.cd <= 0) {
         if (tgt && !(c.sweepT > 0)) { const n0 = this.shots.length; this.src = s; this.fire(s, c, tgt); for (let k = n0; k < this.shots.length; k++) this.shots[k].src = s; c.cd += 1 / c.rate; if (c.cd < 0) c.cd = 0; }
         else c.cd = 0;
@@ -548,32 +617,71 @@ export class Run {
       if (z.att) d *= z.att.car === s.car || z.att.car === this.cars[0] ? 0.25 : 0.45; // anything biting the train comes first, the engine most (it ends the run)
       else if (z.pref === s.car) d *= 0.7;
       else if (z.pref && !z.att) { if (raw > near2) continue; d *= 2.2; }
-      if (z.boss) d *= 0.7;
+      if (z.boss) d *= 0.3;   // round 18: the boss hops about, so crews in range keep on it instead of drifting to small fry
       if (d < bd) { bd = d; best = z; }
     }
     return best;
   }
-  // the gun tip of the paper-doll arm (see drawCrew)
+  // the gun tip (see drawCrew); a = the barrel's direction on screen when the crew uses pose pictures
   muzzle(s, c) {
-    const r = this.rig(s, c), m = r.arm && r.arm.tip;
+    const r = this.rig(s, c);
+    if (r.pose) {
+      const t = r.pic.tip, o = r.pic.anc;
+      const lx = (t[0] - o[0]) * r.W * r.sq * (r.flip ? -1 : 1), ly = (t[1] - o[1]) * r.H / r.sq;
+      const cr = Math.cos(r.rot), sr = Math.sin(r.rot);
+      return { x: r.x + lx * cr - ly * sr, y: r.y + lx * sr + ly * cr, a: r.ba };
+    }
+    const m = r.arm && r.arm.tip;
     if (!m) { const flip = c.flip ? 1 : -1; return { x: s.x + flip * 11, y: s.y - 22 }; }
     const lx = (m[0] - r.arm.piv[0]) * r.A, ly = (m[1] - r.arm.piv[1]) * r.Ah * (r.ca < 0 ? -1 : 1);
     return { x: r.px + lx * r.ca - ly * r.sa, y: r.py + lx * r.sa + ly * r.ca };
   }
+  // pose pictures: one generated picture per aim (right, down-right, down, up-right, up; the left side is the
+  // right one mirrored) with the body, both arms and the gun drawn together. The pose only changes once the aim
+  // is well past the halfway line, so it does not flicker; the body leans a little toward the exact aim.
+  pose(c) {
+    const ca = Math.cos(c.aimA), sa = Math.sin(c.aimA);
+    let flip = c.pfl ?? ca < 0;
+    if (ca < -0.1) flip = true; else if (ca > 0.1) flip = false;
+    const m = Math.atan2(sa, flip ? -ca : ca); // the aim as if on the right side, -PI/2 (up) .. PI/2 (down)
+    let k = c.pk;
+    if (k === undefined || Math.abs(m - POSE_A[k]) > Math.PI / 8 + 0.09) {
+      let bd = 9;
+      for (let i = 0; i < 5; i++) { const d = Math.abs(m - POSE_A[i]); if (d < bd) { bd = d; k = i; } }
+    }
+    c.pk = k; c.pfl = flip;
+    const lean = Math.max(-0.2, Math.min(0.2, (m - POSE_A[k]) * 0.4));
+    return { k, flip, lean };
+  }
   // paper-doll rig: torso view picked from the aim, arm + gun turns around the shoulder
+  // (pose pictures replace it when the crew member has them)
   rig(s, c) {
+    const foot = s.y + 9;
+    const drop = c.drop > 0 ? c.drop : 0, lift = drop * 220;
+    const bob = Math.sin(this.t * 7 + c.bob) * 0.8;
+    const P = art[`crew-${c.type}-p0`] && this.pose(c);
+    if (P) {
+      const pic = art[`crew-${c.type}-p${P.k}`], W = pic.w * pic.u, H = pic.h * pic.u;
+      const rot = P.flip ? -P.lean : P.lean, ba = P.flip ? Math.PI - POSE_A[P.k] - P.lean : POSE_A[P.k] + P.lean;
+      const kick = c.recoil * 2.2, sq = drop > 0 ? 1 : 1 + c.recoil * 0.04;
+      const x = s.x - Math.cos(ba) * kick, y = foot + bob - lift - Math.sin(ba) * kick * 0.6;
+      return { pose: true, ...P, pic, W, H, rot, ba, sq, x, y, foot, drop, px: x, py: y };
+    }
     const T = 40, a = c.aimA, ca = Math.cos(a), sa = Math.sin(a);
     const view = sa > 0.5 ? 'f' : sa < -0.5 ? 'b' : 's';
     const body = art[`crew-${c.type}-${view}`], arm = art[`crew-${c.type}-arm`];
     const th = body ? T * body.h / body.w : T * 1.4;
     const A = T * 1.5, Ah = arm ? A * arm.h / arm.w : 0;
-    const foot = s.y + 9;
     const px = s.x + (view === 's' ? ca * T * 0.06 : ca * T * 0.2), py = foot - th * 0.36;
-    return { T, a, ca, sa, view, body, arm, th, A, Ah, foot, px, py };
+    return { T, a, ca, sa, view, body, arm, th, A, Ah, foot, px, py, drop, lift, bob };
   }
   fire(s, c, z) {
     const m = this.muzzle(s, c);
-    const a = Math.atan2(z.y - m.y, z.x - m.x);
+    // crews lead a hopping boss: aim where it will be when the shot gets there
+    const ap = z.boss && z.jump && c.kind !== 'rocket' ? this.bossAhead(z, Math.hypot(z.x - m.x, z.y - m.y) / (c.speed || 270)) : z;
+    const a = Math.atan2(ap.y - m.y, ap.x - m.x);
+    // muzzle flashes ride on the gun tip (the train and the gun keep moving while they show)
+    const at = () => { const q = this.muzzle(s, c); return { x: q.x, y: q.y, rot: q.a ?? a }; };
     const dmg = c.dmg * this.mods.dmg * this.lvMul(c.type);
     c.recoil = 1;
     sfx.shot(c.kind);
@@ -583,32 +691,32 @@ export class Run {
         const aa = a + rand(-c.spread, c.spread) + (n > 1 ? (i - 0.5) * 0.12 : 0);
         this.shots.push({ kind: 'bullet', x: m.x, y: m.y, vx: Math.cos(aa) * c.speed, vy: Math.sin(aa) * c.speed, dmg, r: 4, life: c.range / c.speed + 0.15, t: 0, color: c.vfx, by: c.type });
       }
-      if (has('fx-muzzle-orange')) { this.fx.spr(m.x, m.y, 'fx-muzzle-orange', c.type === 'captain' ? 26 : 30, { rot: a, ax: 0.12, life: 0.06, img: c.type === 'captain' ? tinted('fx-muzzle-orange', '#ffd23f', 0.45) : undefined }); }
+      if (has('fx-muzzle-orange')) { this.fx.spr(m.x, m.y, 'fx-muzzle-orange', c.type === 'captain' ? 26 : 30, { at, rot: a, ax: 0.12, life: 0.06, img: c.type === 'captain' ? tinted('fx-muzzle-orange', '#ffd23f', 0.45) : undefined }); }
       else { this.fx.flash(m.x + Math.cos(a) * 6, m.y + Math.sin(a) * 6, 11, c.vfx, 0.06); this.fx.star(m.x + Math.cos(a) * 5, m.y + Math.sin(a) * 5, 8, '#fff3a0', 0.07); }
       // brass casings fly out sideways
       if (c.type === 'gunner') this.fx.dot(s.x, s.y, -Math.sin(a) * rand(50, 100) * (Math.random() < 0.5 ? 1 : -1), Math.cos(a) * rand(40, 90), 2, '#e0b13a', 0.55, { vz: 90, g: 420, ink: '#6b4a12' });
     } else if (c.kind === 'pellet') {
       for (let i = 0; i < c.pellets; i++) { const aa = a + rand(-c.spread / 2, c.spread / 2), sp = c.speed * rand(0.85, 1.1); this.shots.push({ kind: 'pellet', x: m.x, y: m.y, vx: Math.cos(aa) * sp, vy: Math.sin(aa) * sp, dmg, r: 4, life: c.range / sp, t: 0, color: c.vfx, knock: c.knock, by: c.type }); }
-      if (has('fx-muzzle-yellow')) this.fx.spr(m.x, m.y, 'fx-muzzle-yellow', 44, { rot: a, ax: 0.1, life: 0.08 });
+      if (has('fx-muzzle-yellow')) this.fx.spr(m.x, m.y, 'fx-muzzle-yellow', 44, { at, rot: a, ax: 0.1, life: 0.08 });
       else this.fx.flash(m.x + Math.cos(a) * 8, m.y + Math.sin(a) * 8, 18, '#fff3a0', 0.07);
       for (let i = 0; i < 3; i++) this.fx.puff(m.x + Math.cos(a) * (12 + i * 6), m.y + Math.sin(a) * (12 + i * 6), 6 + i * 2, '#ffffff', 0.45, { vx: Math.cos(a) * 50 + rand(-15, 15), vy: Math.sin(a) * 50 + rand(-15, 15), grow: 1.9 });
     } else if (c.kind === 'rocket') {
       this.shots.push({ kind: 'rocket', x: m.x, y: m.y, vx: Math.cos(a) * c.speed * 0.5, vy: Math.sin(a) * c.speed * 0.5, sp: c.speed, dmg, r: 8, aoe: c.aoe, life: 1.6, t: 0, tgt: z, trail: 0, shock: c.vfx });
       this.fx.puff(m.x, m.y, 10, '#ffffff', 0.45);
-      if (has('fx-muzzle-orange')) this.fx.spr(m.x, m.y, 'fx-muzzle-orange', 26, { rot: a, ax: 0.12, life: 0.07 });
+      if (has('fx-muzzle-orange')) this.fx.spr(m.x, m.y, 'fx-muzzle-orange', 26, { at, rot: a, ax: 0.12, life: 0.07 });
       this.fx.puff(m.x - Math.cos(a) * 16, m.y - Math.sin(a) * 16, 8, '#ffffff', 0.4, { vx: -Math.cos(a) * 60, vy: -Math.sin(a) * 60 });
     } else if (c.kind === 'rail') {
       const ex = m.x + Math.cos(a) * c.range, ey = m.y + Math.sin(a) * c.range;
       const hits = [];
       for (const q of this.zs) {
         if (q.dead || q.air > 0) continue;
-        const px = q.x - m.x, py = (q.y - 12) - m.y, along = px * Math.cos(a) + py * Math.sin(a);
+        const px = q.x - m.x, py = this.hitY(q) - m.y, along = px * Math.cos(a) + py * Math.sin(a);
         if (along < 0 || along > c.range) continue;
         const perp = Math.abs(-px * Math.sin(a) + py * Math.cos(a));
-        if (perp < q.r + 6) hits.push([along, q]);
+        if (perp < this.hitR(q) + 6) hits.push([along, q]);
       }
       hits.sort((p, q) => p[0] - q[0]);
-      hits.slice(0, c.pierce).forEach(([, q], i) => { this.damage(q, dmg * (1 - i * 0.12), { kx: Math.cos(a) * 160, ky: Math.sin(a) * 160, color: '#e0c3ff' }); this.fx.star(q.x, q.y - 14, 15, c.vfx, 0.26); });
+      hits.slice(0, c.pierce).forEach(([, q], i) => { this.damage(q, dmg * (1 - i * 0.12), { kx: Math.cos(a) * 160, ky: Math.sin(a) * 160, color: '#e0c3ff' }); this.fx.star(q.x, this.bodyY(q) - 2, 15, c.vfx, 0.26); });
       this.fx.beam(m.x, m.y, ex, ey, c.vfx, 6, 0.18, 'rgba(155,92,246,.35)');
       this.fx.flash(m.x, m.y, 14, '#e8d6ff', 0.08);
       this.fx.star(m.x, m.y, 10, c.vfx, 0.12);
@@ -631,21 +739,21 @@ export class Run {
         cur = nb;
       }
       this.fx.bolt(pts, c.vfx, 0.16, 'rgba(42,212,200,.35)');
-      if (has('fx-muzzle-teal')) this.fx.spr(m.x, m.y, 'fx-muzzle-teal', 30, { rot: a, ax: 0.12, life: 0.09 });
+      if (has('fx-muzzle-teal')) this.fx.spr(m.x, m.y, 'fx-muzzle-teal', 30, { at, rot: a, ax: 0.12, life: 0.09 });
       else this.fx.flash(m.x, m.y, 12, '#d6fffa', 0.08);
     } else if (c.kind === 'saw') {
       // a spinning blade that cuts through the crowd and bounces on to the next zombie
       this.shots.push({ kind: 'saw', x: m.x, y: m.y, vx: Math.cos(a) * c.speed, vy: Math.sin(a) * c.speed, sp: c.speed, dmg, r: 11, life: 0.9, t: 0, hit: new Set(), bounce: c.bounce, by: c.type });
-      if (has('fx-sparks')) this.fx.spr(m.x, m.y, 'fx-sparks', 34, { rot: a, ax: 0.05, life: 0.1 });
-      this.fx.shake(0.03);
+      if (has('fx-sparks')) this.fx.spr(m.x, m.y, 'fx-sparks', 34, { at, rot: a, ax: 0.05, life: 0.1 });
+      this.fx.shake(0.03, 0.25);
     } else if (c.kind === 'mortar') {
       // lobbed high: lands where the target will be when the bomb comes down
       const T = 0.75 + Math.hypot(z.x - m.x, z.y - m.y) / 700;
       const ac = z.att && z.att.car, tx = z.x + (ac ? ac.fx * this.speed * T : (z.kx || 0) * 0.1), ty = z.y + (ac ? ac.fy * this.speed * T : 0);
       this.shots.push({ kind: 'mortar', x0: m.x, y0: m.y, x: m.x, y: m.y, tx, ty, T, t: 0, life: T, dmg, aoe: c.aoe, H: 70 + Math.hypot(tx - m.x, ty - m.y) * 0.35, trail: 0 });
-      if (has('fx-muzzle-orange')) this.fx.spr(m.x, m.y, 'fx-muzzle-orange', 36, { rot: a, ax: 0.12, life: 0.09 });
+      if (has('fx-muzzle-orange')) this.fx.spr(m.x, m.y, 'fx-muzzle-orange', 36, { at, rot: a, ax: 0.12, life: 0.09 });
       if (has('fx-puff')) for (let i = 0; i < 3; i++) this.fx.spr(m.x + rand(-6, 6), m.y + rand(-6, 6), 'fx-puff', rand(16, 24), { vx: Math.cos(a) * 40 + rand(-20, 20), vy: Math.sin(a) * 40 - 20, drag: 2, life: 0.7, grow: 1.8 });
-      this.fx.shake(0.06);
+      this.fx.shake(0.04, 0.25);
     } else if (c.kind === 'laser') {
       // a beam that sweeps across the target, melting a line in the snow
       const dir = Math.random() < 0.5 ? -1 : 1;
@@ -654,11 +762,11 @@ export class Run {
     } else if (c.kind === 'harpoon') {
       // skewers the first few zombies in a row and drags them away from the train
       this.shots.push({ kind: 'harpoon', seat: s, x: m.x, y: m.y, vx: Math.cos(a) * c.speed, vy: Math.sin(a) * c.speed, a, dmg, r: 9, t: 0, life: c.range / c.speed, pierce: c.pierce, held: [], phase: 0, pt: 0 });
-      if (has('fx-muzzle-yellow')) this.fx.spr(m.x, m.y, 'fx-muzzle-yellow', 30, { rot: a, ax: 0.1, life: 0.07 });
-      this.fx.shake(0.05);
+      if (has('fx-muzzle-yellow')) this.fx.spr(m.x, m.y, 'fx-muzzle-yellow', 30, { at, rot: a, ax: 0.1, life: 0.07 });
+      this.fx.shake(0.05, 0.25);
     } else if (c.kind === 'ice') {
       this.shots.push({ kind: 'ice', x: m.x, y: m.y, vx: Math.cos(a) * c.speed, vy: Math.sin(a) * c.speed, dmg, r: 6, life: c.range / c.speed + 0.1, t: 0, slow: c.slow, a });
-      if (has('fx-muzzle-ice')) this.fx.spr(m.x, m.y, 'fx-muzzle-ice', 30, { rot: a, ax: 0.12, life: 0.09 });
+      if (has('fx-muzzle-ice')) this.fx.spr(m.x, m.y, 'fx-muzzle-ice', 30, { at, rot: a, ax: 0.12, life: 0.09 });
       for (let i = 0; i < 3; i++) this.fx.dot(m.x, m.y, Math.cos(a + rand(-0.5, 0.5)) * rand(60, 120), Math.sin(a + rand(-0.5, 0.5)) * rand(60, 120), 2, '#ffffff', 0.3, { ink: '#7fc8ee' });
     }
   }
@@ -688,6 +796,25 @@ export class Run {
         if (z.air <= 0) { z.h = 0; z.rot = 0; z.vx = z.vy = 0; this.fx.puff(z.x, z.y, 10, '#ffffff', 0.4); }
         continue;
       }
+      // runner pounce: a short crouch (the tell), then a jump in an arc that lands on the wagon with a bite
+      if (z.crouch > 0) {
+        z.crouch -= dt * (z.slowT > 0 ? 0.6 : 1);
+        if (z.crouch <= 0) { const t = z.leapTo; z.leapTo = null; if (this.cars.includes(t.car) && !t.car.broken) { z.leap = { ...t, t: 0, x0: z.x, y0: z.y }; this.fx.puff(z.x, z.y, 7, '#ffffff', 0.3); } }
+        continue;
+      }
+      if (z.leap) {
+        const L = z.leap, c = L.car, P = z.leap.cfg;
+        if (!this.cars.includes(c)) { z.leap = null; z.h = 0; continue; }
+        L.t += dt * (z.slowT > 0 ? 0.6 : 1); const k = Math.min(1, L.t / P.T);
+        const tx = c.x + c.fx * L.f - c.fy * L.s, ty = c.y + c.fy * L.f + c.fx * L.s;
+        z.x = L.x0 + (tx - L.x0) * k; z.y = L.y0 + (ty - L.y0) * k; z.h = 4 * P.H * k * (1 - k);
+        z.flip = tx > L.x0;
+        if (k >= 1) {
+          z.leap = null; z.h = 0; z.att = { car: c, f: L.f, s: L.s }; z.bite = 0;
+          this.hurtCar(c, P.bite); this.fx.puff(z.x, z.y - 8, 9, '#ffffff', 0.35); this.fx.shake(0.04, 0.25);
+        }
+        continue;
+      }
       if (z.idle) { if (z.y > v.top - 40) { z.idle = false; this.fx.label(z.x, z.y - 40, '!', 22, '#ff4058', 0.6); } else continue; }
       const rushing = z.rush && z.pref && !z.att;
       const sp = (rushing ? Math.max(z.spd, this.speed * (z.heavy ? 1.25 : 1.5)) : z.spd) * (z.slowT > 0 ? 0.45 : 1);
@@ -700,25 +827,27 @@ export class Run {
         continue;
       }
       if (z.boss) {
-        // comes straight at the train as soon as it shows up: walks to a spot beside the engine, lunges in
-        // for each stomp, and stays inside the arena round the loop
-        const H = this.toF(this.loopC.x, this.loopC.y), loco = this.cars[0];
-        let T, v;
-        if (z.stagger > 0) { T = z; v = 0; }
-        else if (z.tele) { const ex = z.tele.x - z.x, ey = z.tele.y - z.y, ed = Math.hypot(ex, ey) || 1, k = Math.max(0, ed - 55) / ed; T = { x: z.x + ex * k, y: z.y + ey * k }; v = 190; }
-        else {
-          // keeps to the open snow on the loop side of the engine, so trees and the train do not hide it
-          const ox = H.x - loco.x, oy = H.y - loco.y, od = Math.hypot(ox, oy) || 1, off = Math.min(140, od * 0.8);
-          T = { x: loco.x + ox / od * off, y: loco.y + oy / od * off };
-          v = Math.hypot(z.x - loco.x, z.y - loco.y) > 320 ? 120 : 85;
+        // moves in hops instead of walking: bounds in from the middle of the loop, then keeps hopping
+        // round the engine at a distance (so its moves can be seen), and for each stomp crouches and
+        // leaps onto the red mark, landing as the stomp comes down, then hops back out
+        const H = this.toF(this.loopC.x, this.loopC.y);
+        if (z.jump) {
+          const J = z.jump; J.t += dt;
+          const k = Math.min(1, J.t / J.T);
+          z.x = J.x0 + (J.x1 - J.x0) * k; z.y = J.y0 + (J.y1 - J.y0) * k; z.h = J.H * 4 * k * (1 - k);
+          if (k >= 1) { z.jump = null; z.h = 0; z.landK = 1; if (!J.stomp) this.bossLand(z, J); z.hopT = J.stomp ? 0.8 : rand(1.0, 1.7); }
+        } else if (!(z.stagger > 0) && !z.atk) {
+          if (z.tele) {
+            if (z.atkT <= BOSS_LEAP) { const ox = H.x - z.tele.x, oy = H.y - z.tele.y, od = Math.hypot(ox, oy) || 1; this.bossJump(z, z.tele.x + ox / od * BOSS_STOMP_OFF, z.tele.y + oy / od * BOSS_STOMP_OFF, Math.max(0.2, z.atkT), 120, true); }
+          } else if ((z.hopT = (z.hopT ?? 0.3) - dt) <= 0) {
+            const p = this.bossSpot(z, H);
+            if (p) this.bossJump(z, p.x, p.y, 0.4 + p.d / 900, 26 + p.d * 0.2, false);
+            else z.hopT = 0.3;
+          }
         }
-        const ox = T.x - H.x, oy = T.y - H.y, od = Math.hypot(ox, oy), lim = STAGE.loopR + 260;
-        if (od > lim) T = { x: H.x + ox / od * lim, y: H.y + oy / od * lim };
-        const dx = T.x - z.x, dy = T.y - z.y, d = Math.hypot(dx, dy);
-        const mv = d > 2 ? Math.min(d, v * dt) : 0;
-        if (mv) { z.x += dx / d * mv; z.y += dy / d * mv; }
+        z.landK = Math.max(0, (z.landK || 0) - dt * 4);
         z.flip = (z.tele ? z.tele.x : this.cars[0].x) > z.x;
-        this.bossRigStep(z, dt, mv / Math.max(dt, 1e-4));
+        this.bossRigStep(z, dt, 0);
         continue;
       }
       // walk to the chosen car's side (flankers) or the nearest car's side, aiming where it will be
@@ -753,15 +882,21 @@ export class Run {
       if (ahead > -14 && ahead < 26 && Math.abs(lat) < plowW && this.speed > 8) {
         if (z.heavy) {
           z.plowBlock = true; z.pt = (z.pt || 0) + dt;
-          if (z.pt > 0.3) { z.pt = 0; this.damage(z, plowD * 1.2, { color: '#ffffff' }); this.fx.shake(0.15); sfx.plow(); for (let k = 0; k < 4; k++) { const o = rand(-20, 20); this.fx.spark(pfx - loco.fy * o, pfy + loco.fx * o, rand(-2.6, -0.5) + loco.a, rand(200, 400), 12, '#ffd23f'); } }
+          if (z.pt > 0.3) { z.pt = 0; this.damage(z, plowD * 1.2, { color: '#ffffff' }); this.fx.shake(0.15, 0.4); sfx.plow(); for (let k = 0; k < 4; k++) { const o = rand(-20, 20); this.fx.spark(pfx - loco.fy * o, pfy + loco.fx * o, rand(-2.6, -0.5) + loco.a, rand(200, 400), 12, '#ffd23f'); } }
           z.x = pfx + loco.fx * 14 - loco.fy * lat; z.y = pfy + loco.fy * 14 + loco.fx * lat;
           continue;
         }
         this.damage(z, plowD, { color: '#ffffff' });
         if (!z.dead) { const s = lat >= 0 ? 1 : -1, out = s * rand(220, 320), fw = this.speed + rand(40, 120); z.air = 0.5; z.vx = -loco.fy * out + loco.fx * fw; z.vy = loco.fx * out + loco.fy * fw; z.vh = 300; z.vr = s * rand(8, 14); }
         else { z.air = 0; }
-        this.fx.shake(0.08); sfx.plow();
+        this.fx.shake(0.08, 0.3); sfx.plow();
         this.fx.puff(z.x, z.y, 12, '#ffffff', 0.4);
+        continue;
+      }
+      if (z.pounce && dist < z.pounce.r && dist > 22 && !best.broken) {
+        const P = z.pounce;
+        z.crouch = P.crouch; z.leapTo = { car: best, f: bf + rand(-6, 6), s: want + rand(-3, 3) * side, cfg: P };
+        z.flip = tx > z.x;
         continue;
       }
       if (dist < 9) {
@@ -770,6 +905,11 @@ export class Run {
         continue;
       }
       dx /= dl || 1; dy /= dl || 1;
+      if (z.weave) {
+        z.wv = (z.wv ?? rand(0, 6)) + dt * 4.2;
+        const w = Math.sin(z.wv) * z.weave * clamp((dist - 60) / 120, 0, 1), nx = dx - dy * w, ny = dy + dx * w, nl = Math.hypot(nx, ny) || 1;
+        dx = nx / nl; dy = ny / nl;
+      }
       // separation
       let sx = 0, sy = 0;
       const gx = Math.floor(z.x / C), gy = Math.floor(z.y / C);
@@ -782,6 +922,7 @@ export class Run {
       z.x += (dx * sp + z.kx) * dt + sx * 0.25; z.y += (dy * sp + z.ky) * dt + sy * 0.25;
       z.side = Math.abs(dx) > Math.abs(dy) * 1.1 ? true : Math.abs(dy) > Math.abs(dx) * 1.4 ? false : z.side;
       if (Math.abs(dx) > 0.2) z.flip = dx > 0;
+      z.mvx = dx; z.mvy = dy;   // walk direction for the jointed zombie's facing
       // fell behind the train: gone
       if (z.y > v.bot + 120) this.zs.splice(i, 1);
     }
@@ -794,7 +935,7 @@ export class Run {
     sfx.hurt();
     if (c.hp <= 0) {
       if (c === this.cars[0]) this.lose();
-      else if (!c.broken) { c.broken = true; this.fx.boom(c.x, c.y, 50); this.fx.shake(0.5); sfx.boom(true); this.fx.label(c.x, c.y - 30, 'WAGON DOWN!', 20, '#ff4058', 1.3); }
+      else if (!c.broken) { c.broken = true; c.brokeAt = this.t; this.fx.boom(c.x, c.y, 50); this.fx.shake(0.5); sfx.boom(true); this.fx.label(c.x, c.y - 30, 'WAGON DOWN!', 20, '#ff4058', 1.3); }
     }
   }
 
@@ -812,11 +953,55 @@ export class Run {
     if (z.boss) this.bossHit(z, dmg, crit);
     if (!z.heavy && o.kx !== undefined) { z.kx += o.kx; z.ky += o.ky; }
     // beam ticks add up into one number per zombie instead of a stream of small ones
-    if (o.acc) { z.acc = (z.acc || 0) + dmg; if (this.t - z.numT > 0.35 || z.hp <= 0) { z.numT = this.t; this.fx.num(z.x, z.y - 30 * (z.scale || 1) - (z.boss ? 90 : 0), Math.round(z.acc), { color: o.color }); z.acc = 0; } }
+    if (o.acc) { z.acc = (z.acc || 0) + dmg; if (this.t - z.numT > 0.35 || z.hp <= 0) { z.numT = this.t; this.fx.num(z.x, z.y - 30 * (z.scale || 1) - (z.boss ? 90 * BOSS_K : 0), Math.round(z.acc), { color: o.color }); z.acc = 0; } }
     else if (crit || this.t - z.numT > (o.small ? 0.4 : 0.11) || dmg >= 30) {
-      if (crit && dmg >= 40) this.hitstop = Math.max(this.hitstop || 0, 0.02); z.numT = this.t; this.fx.num(z.x, z.y - 30 * (z.scale || 1) - (z.boss ? 90 : 0), Math.round(dmg), { crit, color: crit ? '#ffd23f' : o.color }); }
+      if (crit && dmg >= 40) this.hitstop = Math.max(this.hitstop || 0, 0.02); z.numT = this.t; this.fx.num(z.x, z.y - 30 * (z.scale || 1) - (z.boss ? 90 * BOSS_K : 0), Math.round(dmg), { crit, color: crit ? '#ffd23f' : o.color }); }
     sfx.hit();
+    if (z.hp > 0 && !z.boss) this.limbLoss(z, o);
     if (z.hp <= 0) this.kill(z);
+  }
+  // round 18 (owner 2026-11-04): a jointed zombie that survives a hit loses an arm or a leg, one at 2/3
+  // and one at 1/3 of its health; looks only, it moves and bites the same
+  limbLoss(z, o) {
+    if (globalThis.ZRIG_OFF || !zrigHas(z.type)) return;
+    const want = Math.min(2, Math.floor((1 - z.hp / z.max) * 3)), arms = zrigArms(z.type);
+    while ((z.nLost || 0) < want) {
+      const L = z.lost || 0, c = [];
+      if (arms) for (const i of [2, 3]) if (!(L & (1 << i))) c.push(i, i);   // arms come off first more often
+      if (!(L & 3)) c.push(0, 1);
+      if (!c.length) return;
+      const li = pick(c), arm = li >= 2, H = 44 * (z.scale || 1);
+      z.lost = L | (1 << li); z.nLost = (z.nLost || 0) + 1;
+      const sgn = z.zv === 's' ? (z.zm ? -1 : 1) * 0.3 : (li & 1 ? 1 : -1);
+      const bx = z.x + sgn * H * 0.18, bh = z.h + H * (arm ? 0.6 : 0.26);
+      let ax = o.kx || 0, ay = o.ky || 0; const ad = Math.hypot(ax, ay);
+      if (ad < 1) { const a = rand(0, Math.PI * 2); ax = Math.cos(a); ay = Math.sin(a); } else { ax /= ad; ay /= ad; }
+      const sp = rand(100, 180);
+      if (this.bits.length > 40) this.bits.shift();
+      this.bits.push({ type: z.type, v: z.zv || 'f', mir: !!z.zm, arm, x: bx, y: z.y, h: bh, vx: ax * sp + sgn * 60, vy: ay * sp * 0.7, vh: rand(170, 260), rot: rand(-0.6, 0.6), vr: rand(-14, 14), H, t: 0, life: 4.5 });
+      for (let i = 0; i < 6; i++) { const a = rand(0, Math.PI * 2), s2 = rand(50, 130); this.fx.dot(bx, z.y, Math.cos(a) * s2, Math.sin(a) * s2 * 0.7, rand(2.2, 4), i % 3 ? '#7ddc4a' : '#c6ff8f', rand(0.3, 0.5), { z: bh, vz: rand(40, 160), g: 520, ink: '#1d2440' }); }
+    }
+  }
+  // knocked-off limbs: fly, bounce once (leaving a goo mark), lie on the snow, fade
+  bitStep(dt) {
+    if (!this.bits.length) return;
+    for (const b of this.bits) {
+      b.t += dt;
+      if (b.rest) continue;
+      b.x += b.vx * dt; b.y += b.vy * dt; b.vh -= 900 * dt; b.h += b.vh * dt; b.rot += b.vr * dt;
+      if (b.h <= 0) {
+        b.h = 0;
+        if (!b.bounced) { b.bounced = true; b.vh *= -0.32; b.vx *= 0.45; b.vy *= 0.45; b.vr *= 0.4; this.fx.decal(b.x, b.y, 8, 'goo'); }
+        else b.rest = true;
+      }
+    }
+    this.bits = this.bits.filter((b) => b.t < b.life);
+  }
+  drawBit(g, b) {
+    g.globalAlpha = Math.min(1, (b.life - b.t) / 0.8);
+    if (b.h > 0) { const k = Math.max(0.3, 1 - b.h / 120); g.fillStyle = `rgba(40,60,100,${0.16 * k})`; g.beginPath(); g.ellipse(b.x, b.y + 1, b.H * 0.16 * k, b.H * 0.06 * k, 0, 0, Math.PI * 2); g.fill(); }
+    drawZBit(g, b);
+    g.globalAlpha = 1;
   }
   // the yeti feels each hit: a punch that squashes it and shoves it away from the shooter, sparks with fur and
   // ice chips flying off the side that was hit, and a stagger each time it loses another quarter of its health
@@ -825,11 +1010,11 @@ export class Run {
     if (dmg >= 30 || crit) z.recoil = Math.min(1, (z.recoil || 0) + 0.5);
     z.punch = Math.min(1, (z.punch || 0) + 0.3 + dmg / 100);
     const S = this.src && this.src.car ? this.src.car : this.cars[0];
-    const bodyY = z.y - z.h - 62, ex = z.x - S.x, ey = bodyY - S.y, ed = Math.hypot(ex, ey) || 1;
+    const bodyY = this.bodyY(z), ex = z.x - S.x, ey = bodyY - S.y, ed = Math.hypot(ex, ey) || 1;
     z.kickX = ex / ed; z.kickY = ey / ed;
     if (this.t - (z.fxAt ?? -9) > 0.05) {
       z.fxAt = this.t;
-      const hx = z.x - z.kickX * 32 + rand(-12, 12), hy = bodyY - z.kickY * 22 + rand(-24, 20), back = Math.atan2(-z.kickY, -z.kickX);
+      const hx = z.x - z.kickX * 32 * BOSS_K + rand(-12, 12), hy = bodyY - z.kickY * 22 * BOSS_K + rand(-24, 20) * BOSS_K, back = Math.atan2(-z.kickY, -z.kickX);
       this.fx.spr(hx, hy, 'fx-hit', 38 + Math.min(30, dmg * 0.8), { life: 0.11, rot: rand(0, 6.3), grow: 1.35 });
       for (let i = 0; i < 3; i++) { const a = back + rand(-1, 1), sp = rand(90, 190); this.fx.dot(hx, hy, Math.cos(a) * sp, Math.sin(a) * sp * 0.6, rand(3.6, 5.2), '#ffffff', rand(0.4, 0.6), { z: 4, vz: rand(60, 140), g: 420, ink: 'rgba(0,0,0,0)' }); }
       if (Math.random() < 0.5 || dmg >= 30 || crit) { const a = back + rand(-0.8, 0.8), sp = rand(150, 240); this.fx.spr(hx, hy, 'fx-shard', rand(16, 24), { vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, rot: a, vr: rand(-12, 12), life: 0.42, grow: 0.7, drag: 2 }); }
@@ -850,17 +1035,17 @@ export class Run {
     this.kills++; this.combo++; this.comboT = 1.6; this.bestCombo = Math.max(this.bestCombo, this.combo);
     // several kills at once (a bomb, a laser sweep) get a callout where they happened
     this.kq = (this.kq || []).filter((t) => this.t - t < 0.25); this.kq.push(this.t);
-    if (this.kq.length >= 5 && this.t - (this.multiT ?? -9) > 0.9) { this.multiT = this.t; this.fx.label(z.x, z.y - 46, `MULTI KILL x${this.kq.length}!`, 20, '#ffd23f', 1.0, { ink: '#7a3a00' }); this.fx.shake(0.08); }
+    if (this.kq.length >= 5 && this.t - (this.multiT ?? -9) > 0.9) { this.multiT = this.t; this.fx.label(z.x, z.y - 46, `MULTI KILL x${this.kq.length}!`, 20, '#ffd23f', 1.0, { ink: '#7a3a00' }); this.fx.shake(0.08, 0.35); }
     this.od = Math.min(1, this.od + (z.heavy ? 0.12 : 1 / 40));
     sfx.pop(this.combo);
     const sz = 30 * (z.scale || 1);
     this.fx.pop(z.x, z.y, sz, { big: z.heavy });
-    if (z.heavy) { this.fx.shake(0.3); this.hitstop = 0.05; buzz(25); }
+    if (z.heavy) { this.fx.shake(0.22, 0.45); this.hitstop = Math.max(this.hitstop || 0, 0.05); buzz(25); }
     const xp = z.xp * this.mods.xp;
     for (let i = 0; i < Math.min(4, Math.ceil(xp / 3)); i++) this.drop('xp', z.x, z.y, xp / Math.min(4, Math.ceil(xp / 3)));
     if (Math.random() < z.coin) for (let i = 0; i < (z.heavy ? 6 : 1); i++) this.drop('coin', z.x, z.y, 1);
     if (z.boom) {
-      this.fx.boom(z.x, z.y, z.boom.r * 0.6); sfx.boom(); this.fx.shake(0.25);
+      this.fx.boom(z.x, z.y, z.boom.r * 0.6); sfx.boom(); this.fx.shake(0.2, 0.45);
       for (const q of this.zs) if (!q.dead && q !== z && Math.hypot(q.x - z.x, q.y - z.y) < z.boom.r) this.damage(q, z.boom.dmg, { kx: (q.x - z.x) * 5, ky: (q.y - z.y) * 5, color: '#ffb35c' });
       for (const c of this.cars) if (Math.hypot(c.x - z.x, c.y - z.y) < c.l / 2 + z.boom.r * 0.6) this.hurtCar(c, 14);
     }
@@ -911,7 +1096,7 @@ export class Run {
         if (Math.random() < 0.5) this.fx.dot(s.x, s.y, rand(-60, 60), rand(-60, 60), 1.6, '#ffd23f', 0.2);
       }
       if (s.kind === 'rocket') {
-        if (s.tgt && !s.tgt.dead) { const a = Math.atan2(s.tgt.y - 12 - s.y, s.tgt.x - s.x), cur = Math.atan2(s.vy, s.vx); let da = a - cur; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2; const na = cur + clamp(da, -6 * dt, 6 * dt), sp = Math.min(s.sp, Math.hypot(s.vx, s.vy) + 900 * dt); s.vx = Math.cos(na) * sp; s.vy = Math.sin(na) * sp; }
+        if (s.tgt && !s.tgt.dead) { const a = Math.atan2(this.hitY(s.tgt) - s.y, s.tgt.x - s.x), cur = Math.atan2(s.vy, s.vx); let da = a - cur; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2; const na = cur + clamp(da, -6 * dt, 6 * dt), sp = Math.min(s.sp, Math.hypot(s.vx, s.vy) + 900 * dt); s.vx = Math.cos(na) * sp; s.vy = Math.sin(na) * sp; }
         s.trail -= dt; if (s.trail <= 0) { s.trail = 0.025; this.fx.puff(s.x, s.y, 5, '#f4f6fa', 0.45, { grow: 2.2 }); }
       }
       s.x += s.vx * dt; s.y += s.vy * dt;
@@ -920,8 +1105,9 @@ export class Run {
       if (!dead) {
         for (const z of this.near(s.x, s.y + 12)) {
           if (z.dead || z.air > 0 || (s.hit && s.hit.has(z))) continue;
-          const dx = z.x - s.x, dy = (z.y - 12 * (z.scale || 1)) - s.y, rr = z.r * (z.boss ? 2.2 : 1) + hitR;
+          const dx = z.x - s.x, dy = this.hitY(z) - s.y, rr = this.hitR(z) + hitR;
           if (dx * dx + dy * dy > rr * rr) continue;
+          if (z.boss && s.kind !== 'flame') { const p = this.onBody(z, s.x, s.y); s.x = p.x; s.y = p.y; }
           if (s.kind === 'flame') { s.hit.add(z); this.damage(z, s.dmg, { color: '#ffb35c', small: true }); z.burnT = 2; z.burnBy = s.src; continue; }
           if (s.kind === 'saw') { this.sawHit(s, z); break; }
           const sp = Math.hypot(s.vx, s.vy) || 1;
@@ -942,8 +1128,8 @@ export class Run {
       }
       if (dead) {
         if (s.kind === 'rocket') {
-          this.fx.boom(s.x, s.y, s.aoe * 0.62, { shock: s.shock }); sfx.boom(); this.fx.shake(0.12);
-          for (const z of this.zs) if (!z.dead && Math.hypot(z.x - s.x, z.y - 10 - s.y) < s.aoe + z.r) this.damage(z, s.dmg, { kx: (z.x - s.x) * 4, ky: (z.y - s.y) * 4, color: '#ffd23f' });
+          this.fx.boom(s.x, s.y, s.aoe * 0.62, { shock: s.shock }); sfx.boom(); this.fx.shake(0.08, 0.35);
+          for (const z of this.zs) if (!z.dead && Math.hypot(z.x - s.x, this.hitY(z) - s.y) < s.aoe + z.r) this.damage(z, s.dmg, { kx: (z.x - s.x) * 4, ky: (z.y - s.y) * 4, color: '#ffd23f' });
         }
         // the flamer leaves short-lived burning puddles behind
         if (s.kind === 'flame' && Math.random() < 0.08) this.fx.decal(s.x, s.y + 10, rand(9, 14), 'burn');
@@ -955,14 +1141,14 @@ export class Run {
   sawHit(s, z) {
     s.hit.add(z);
     this.damage(z, s.dmg, { kx: s.vx / s.sp * 40, ky: s.vy / s.sp * 40, color: '#ffb84a' });
-    if (has('fx-sparks')) for (let k = 0; k < 2; k++) this.fx.spr(z.x, z.y - 12, 'fx-sparks', rand(26, 36), { rot: Math.atan2(s.vy, s.vx) + Math.PI + rand(-0.9, 0.9), ax: 0.05, life: 0.14, grow: 1.3 });
-    for (let k = 0; k < 4; k++) this.fx.spark(z.x, z.y - 12, rand(0, Math.PI * 2), rand(120, 220), 7, '#ffd23f', 0.16, 2);
+    if (has('fx-sparks')) for (let k = 0; k < 2; k++) this.fx.spr(z.x, this.bodyY(z), 'fx-sparks', rand(26, 36), { rot: Math.atan2(s.vy, s.vx) + Math.PI + rand(-0.9, 0.9), ax: 0.05, life: 0.14, grow: 1.3 });
+    for (let k = 0; k < 4; k++) this.fx.spark(z.x, this.bodyY(z), rand(0, Math.PI * 2), rand(120, 220), 7, '#ffd23f', 0.16, 2);
     sfx.shot('saw');
     let best = null, bd = 170;
     for (const q of this.near(z.x, z.y)) { if (q.dead || q.air > 0 || s.hit.has(q)) continue; const d = Math.hypot(q.x - z.x, q.y - z.y); if (d < bd) { bd = d; best = q; } }
     if (best && s.bounce > 0) {
       s.bounce--; s.life = s.t + 0.6;
-      const a = Math.atan2(best.y - 12 - s.y, best.x - s.x); s.vx = Math.cos(a) * s.sp; s.vy = Math.sin(a) * s.sp;
+      const a = Math.atan2(this.hitY(best) - s.y, best.x - s.x); s.vx = Math.cos(a) * s.sp; s.vy = Math.sin(a) * s.sp;
     } else if (s.bounce <= 0) s.life = s.t + 0.12;
   }
   // mortar bomb, laser sweep and harpoon: return true when the shot is finished
@@ -986,7 +1172,9 @@ export class Run {
         const d = Math.hypot(z.x - x, z.y - 10 - y);
         if (d < R + z.r) this.damage(z, s.dmg * (d < R * 0.5 ? 1 : 0.7), { kx: (z.x - x) / (d || 1) * 120, ky: (z.y - y) / (d || 1) * 120, color: '#ffd23f' });
       }
-      sfx.boom(true); this.fx.shake(0.32); this.hitstop = Math.max(this.hitstop || 0, 0.035); buzz(20);
+      // several bomb crews land a bomb every few tenths of a second, so each one only nudges the shake and only the
+      // first in a while freezes the frame
+      sfx.boom(true); this.fx.shake(0.15, 0.4); if (this.t - (this.mortarHs ?? -9) > 0.8) { this.mortarHs = this.t; this.hitstop = Math.max(this.hitstop || 0, 0.03); } buzz(20);
       return true;
     }
     if (s.kind === 'laser') {
@@ -1001,9 +1189,9 @@ export class Run {
       const inBeam = [];
       for (const z of this.zs) {
         if (z.dead || z.air > 0) continue;
-        const px = z.x - m.x, py = z.y - 12 - m.y, along = px * ux + py * uy;
+        const px = z.x - m.x, py = this.hitY(z) - m.y, along = px * ux + py * uy;
         if (along < 0 || along > L) continue;
-        const R = z.r * (z.boss ? 2.2 : 1) + 6;
+        const R = this.hitR(z) + 6;
         if (Math.abs(px * uy - py * ux) < R) { inBeam.push([along, z]); if (z.heavy || z.boss) L = Math.min(L, along); }
       }
       s.ex = m.x + ux * L; s.ey = m.y + uy * L;
@@ -1012,7 +1200,7 @@ export class Run {
         s.tick = 0.06;
         for (const [along, z] of inBeam) if (along <= L + 1) {
           this.damage(z, s.dmg, { kx: ux * 6, ky: uy * 6, color: '#ff8ad8', small: true, acc: true });
-          if (has('fx-laser-hit') && Math.random() < 0.5) this.fx.spr(z.x, z.y - 12, 'fx-laser-hit', 26, { rot: rand(0, 6.3), life: 0.1 });
+          if (has('fx-laser-hit') && Math.random() < 0.5) this.fx.spr(z.x, this.bodyY(z), 'fx-laser-hit', 26, { rot: rand(0, 6.3), life: 0.1 });
         }
         if (Math.random() < 0.6) this.fx.dot(s.ex, s.ey, rand(-90, 90), rand(-90, 90), 2, '#ff8ad8', 0.25);
         sfx.shot('laser');
@@ -1027,12 +1215,13 @@ export class Run {
         s.x += s.vx * dt; s.y += s.vy * dt;
         for (const z of this.near(s.x, s.y + 12)) {
           if (z.dead || z.air > 0 || z.held || s.held.includes(z)) continue;
-          if (Math.hypot(z.x - s.x, z.y - 12 - s.y) > z.r * (z.boss ? 2.2 : 1) + s.r) continue;
+          if (Math.hypot(z.x - s.x, this.hitY(z) - s.y) > this.hitR(z) + s.r) continue;
+          if (z.boss) { const p = this.onBody(z, s.x, s.y); s.x = p.x; s.y = p.y; }
           this.damage(z, s.dmg, { color: '#ffe14a' });
           this.fx.spark(s.x, s.y, s.a + Math.PI + rand(-0.6, 0.6), rand(100, 180), 7, '#ffe14a', 0.14, 2);
           if (has('fx-hit')) this.fx.spr(s.x, s.y, 'fx-hit', 26, { life: 0.1 });
-          if (z.heavy || z.boss || s.held.length >= s.pierce) { s.phase = 1; s.pt = 0; this.fx.shake(0.08); break; }
-          if (!z.dead) { z.held = s; s.held.push(z); }
+          if (z.heavy || z.boss || s.held.length >= s.pierce) { s.phase = 1; s.pt = 0; this.fx.shake(0.08, 0.3); break; }
+          if (!z.dead) { z.held = s; s.held.push(z); z.crouch = 0; z.leap = null; z.leapTo = null; z.h = 0; }
         }
         if (s.t >= s.life) { s.phase = 1; s.pt = 0; }
         // skewered zombies ride just behind the tip
@@ -1047,7 +1236,7 @@ export class Run {
           this.damage(z, s.dmg * 0.6, { kx: Math.cos(s.a) * 260, ky: Math.sin(s.a) * 260, color: '#ffe14a' });
           this.fx.puff(z.x, z.y, 10, '#f4f6fa', 0.5, { grow: 2 });
         }
-        if (s.held.length) { this.fx.shake(0.1); sfx.shot('harpoon'); }
+        if (s.held.length) { this.fx.shake(0.1, 0.3); sfx.shot('harpoon'); }
         s.held = [];
         return false;
       }
@@ -1060,6 +1249,12 @@ export class Run {
     }
     return true;
   }
+  // hit area (gameplay, unchanged): a circle a little above the feet; the boss's is wide so the whole ring of wagons can reach it
+  hitY(z) { return z.y - (z.boss ? z.h : 0) - 12 * (z.scale || 1); }
+  hitR(z) { return z.r * (z.boss ? 2.2 : 1); }
+  // where a hit shows: the middle of the body. The boss is tall and its hit circle reaches past its fur, so impacts are pulled onto its body
+  bodyY(z) { return z.boss ? z.y - z.h - 62 * BOSS_K : this.hitY(z); }
+  onBody(z, x, y) { const K = BOSS_K; return z.boss ? { x: clamp(x, z.x - 36 * K, z.x + 36 * K), y: clamp(y, z.y - z.h - 116 * K, z.y - z.h - 36 * K) } : { x, y }; }
   near(x, y) {
     const C = 40, out = [];
     const gx = Math.floor(x / C), gy = Math.floor(y / C);
@@ -1192,7 +1387,7 @@ export class Run {
         this.fx.shake(0.18); sfx.plow();
         for (let i = 0; i < 9; i++) { const a = rand(0, Math.PI * 2); this.fx.dot(c.x, c.y, Math.cos(a) * rand(80, 200), Math.sin(a) * rand(60, 160), rand(3, 6), i % 2 ? '#b07a45' : '#7c5230', 0.7, { vz: rand(100, 250), g: 600, ink: '#1d2440' }); }
         this.fx.puff(c.x, c.y, 18, '#ffffff', 0.4);
-        if (c.kind === 'crates') { for (let i = 0; i < 4; i++) this.drop('coin', c.x, c.y, 1); this.fx.label(c.x, c.y - 30, '+4', 20, '#ffd23f'); }
+        if (c.kind === 'crates') { for (let i = 0; i < 5; i++) this.drop('coin', c.x, c.y, 1); this.fx.label(c.x, c.y - 30, '+5', 20, '#ffd23f'); }
         if (c.kind === 'armory') { this.fx.ring(c.x, c.y, 10, 120, '#c69bff', 0.5, 8); setTimeout(() => this.levelUp(true, 'ARMORY CRATE!'), 250); }
       }
     }
@@ -1255,25 +1450,30 @@ export class Run {
     for (const s of this.signs) if (s.y > v.top - 120 && s.y < v.bot + 60) list.push([s.y, 2, s]);
     // zombies thrown by the plow fly over the roof, so they draw after the crew
     const flying = [];
-    for (const z of this.zs) if (z.y > v.top - 160 && z.y < v.bot + 60) { if (z.air > 0 || z.held) flying.push(z); else list.push([z.y, 3, z]); }
+    for (const z of this.zs) if (z.y > v.top - 160 && z.y < v.bot + 60) { if (z.air > 0 || z.held || z.leap) flying.push(z); else list.push([z.y, 3, z]); }
     // crew stand on the roof: a ground thing has to be ROOF px nearer the camera to cover them
     const ROOF = 30;
     for (const s of this.crewList()) list.push([s.y + 9 + ROOF, 4, s]);
+    for (const b of this.bits) if (b.y > v.top - 80 && b.y < v.bot + 60) list.push([b.y - (b.h > 0 ? 0 : 18), 5, b]);
     list.sort((a, b) => a[0] - b[0]);
     for (const [, kind, o] of list) {
       if (kind === 0) this.drawProp(g, o);
       else if (kind === 1) this.drawCrate(g, o);
       else if (kind === 2) this.drawSign(g, o);
       else if (kind === 4) this.drawCrew(g, o);
+      else if (kind === 5) this.drawBit(g, o);
       else this.drawZombie(g, o);
     }
     flying.sort((a, b) => a.y - b.y);
     for (const z of flying) this.drawZombie(g, z);
+    this.drawBossFx(g);
     if (this.boss && this.boss.tele) { const b = this.boss.tele, kk = Math.min(1, b.t); g.strokeStyle = `rgba(255,64,88,${0.5 + 0.5 * Math.sin(this.t * 20)})`; g.lineWidth = 4; g.fillStyle = 'rgba(255,64,88,.18)'; g.beginPath(); g.ellipse(b.x, b.y, 84 * kk, 62 * kk, 0, 0, Math.PI * 2); g.fill(); g.stroke(); }
     this.drawCarBars(g);
     // shots
     for (const s of this.shots) this.drawShot(g, s);
     this.fx.draw(g);
+    if (this.skullQ) { for (const q of this.skullQ) sprite(g, 'skull-flat', q.x, q.y, q.w, { anchor: 'center', rot: q.rot }); this.skullQ.length = 0; }
+    if (this.bossDrawn) { this.drawBossOutline(g, dpr); this.bossDrawn = null; }
     // screen space: snow, speed lines, vignette
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.drawWeather(g, cw, ch, k);
@@ -1301,19 +1501,29 @@ export class Run {
     if (tile) {
       // one tile = TILE_SLEEPERS sleepers; each sample point draws one sleeper-long slice, turned to the curve
       // (on a bend the slice is stretched so the outside edge has no gaps)
+      // the slice length and bend come from the neighbouring points, so branch curves (which bend off a straight main line) close up too
       const per = step * TILE_SLEEPERS, sh = tile.h / TILE_SLEEPERS;
-      for (const o of all) {
-        const faded = o.j && o.j.choice && o.j.choice !== o.s && this.D > o.j.d0;
-        g.globalAlpha = faded ? 0.5 : 1;
-        for (const p of o.pts) {
+      const isFaded = (o) => !!(o.j && o.j.choice && o.j.choice !== o.s && this.D > o.j.d0);
+      for (const o of [...all.filter(isFaded), ...all.filter((o) => !isFaded(o))]) {
+        const faded = isFaded(o);
+        // the faded track goes through its own layer first, so overlapping slices don't show as darker stripes
+        const q = faded ? this.trackLayer(g) : g;
+        const P = o.pts;
+        for (let i = 0; i < P.length; i++) {
+          const p = P[i];
           if (!p) continue;
+          const nb = (o2) => o2 && Math.abs(o2[3] - p[3]) < step * 1.5 ? o2 : p; // only true neighbours (the ring wraps, the view has gaps)
+          const a = nb(P[i - 1]), b = nb(P[i + 1]), n = (a !== p) + (b !== p);
+          const len = n ? (Math.hypot(b[0] - a[0], b[1] - a[1]) / n) : step;
+          const da = n ? Math.abs(Math.atan2(Math.sin(b[2] - a[2]), Math.cos(b[2] - a[2]))) / n : 0;
+          const h = len + da * TRACK_W / 2;
           const k = Math.round((((-p[3]) % per + per) % per) / step) % TILE_SLEEPERS;
-          const h = step * (1 + this.curvAt(p[3]) * TRACK_W / 2);
-          g.save(); g.translate(p[0], p[1]); g.rotate(p[2]);
-          g.drawImage(tile.img, 0, k * sh, tile.w, sh, -TRACK_W / 2, -h / 2 - 0.6, TRACK_W, h + 1.2);
-          g.restore();
+          q.save(); q.translate(p[0], p[1]); q.rotate(p[2]);
+          const cut = k === 0 ? sh * 0.09 : 0; // the tile's top two rows are see-through: skip them, or a pale band shows every 18 sleepers
+          q.drawImage(tile.img, 0, k * sh + cut, tile.w, sh - cut, -TRACK_W / 2, -h / 2 - 0.6, TRACK_W, h + 1.2);
+          q.restore();
         }
-        g.globalAlpha = 1;
+        if (faded) { g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 0.5; g.drawImage(q.canvas, 0, 0); g.restore(); }
       }
     }
     // bed
@@ -1368,8 +1578,14 @@ export class Run {
       g.restore();
     }
   }
-  // how sharply the main line bends at d (1 / radius)
-  curvAt(d) { let q = this.segs[0]; for (const o of this.segs) { if (d >= o.d0) q = o; else break; } return Math.abs(q.k); }
+  // a scratch canvas the size of the screen, cleared and set to the same world transform as g
+  trackLayer(g) {
+    const c = g.canvas;
+    if (!this.tLayer || this.tLayer.width !== c.width || this.tLayer.height !== c.height) { this.tLayer = document.createElement('canvas'); this.tLayer.width = c.width; this.tLayer.height = c.height; }
+    const q = this.tLayer.getContext('2d');
+    q.setTransform(1, 0, 0, 1, 0, 0); q.clearRect(0, 0, c.width, c.height); q.setTransform(g.getTransform());
+    return q;
+  }
   // draw in the old straight-line coordinates (x = TRACK on the rails, y = -d) at a point of the route
   trackFrame(g, d) { const w = this.wpt(d, 0), f = this.toF(w.x, w.y); g.translate(f.x, f.y); g.rotate(w.a - this.th); g.translate(-TRACK, d); }
   path(g, pts) {
@@ -1384,7 +1600,15 @@ export class Run {
     const shake = c.hitT > 0 ? Math.sin(this.t * 90) * 1.5 : 0;
     const drawn = sprite(g, c.spr, shake + c.dx * c.sw, 0, c.sw, { anchor: 'center', flash: c.hitT > 0 ? c.hitT * 2.5 : 0 });
     if (!drawn) carStandIn(g, c.type, c.w * 0.82, c.l);
+    // the captain stands in a gun hatch like the rest of the crew (the hatch is cut from the wagon art)
+    if (drawn && c.type === 'loco' && has('car-hatch')) { const h = art['car-hatch']; for (const st of c.seats) sprite(g, 'car-hatch', shake + st.q * c.w, -st.f * c.l - HATCH_DY, HATCH_W, { px: h.cx, py: h.cy }); }
     if (c.broken) { g.fillStyle = 'rgba(30,30,40,.35)'; roundRect(g, -c.w * 0.4, -c.l / 2, c.w * 0.8, c.l, 10); g.fill(); }
+    // frozen by the yeti's breath: the engine sits in a crust of ice with spikes at the corners
+    if (i === 0 && this.frozenT > 0 && has('fx-icecrust')) {
+      const a = art['fx-icecrust'], w = c.sw * 1.1, k = this.frozenK();
+      sprite(g, 'fx-icecrust', shake + c.dx * c.sw, 0, w, { anchor: 'center', sy: c.l * 1.05 / (w * a.h / a.w), alpha: 0.82 * k });
+      for (const [qx, qy] of [[-0.46, -0.4], [0.46, -0.22], [-0.44, 0.28], [0.47, 0.44]]) sprite(g, 'fx-icespikes', qx * c.sw, qy * c.l + 12, 30 * (0.6 + 0.4 * k), { alpha: k });
+    }
     if (i === 0 && this.state !== 'lose' && has('fx-headlight')) {
       g.globalAlpha = 0.75 + 0.15 * Math.sin(this.t * 10);
       fxs(g, 'fx-headlight', 0, -c.l / 2 - 96, 124); // art: lamp at the bottom, beam going up
@@ -1418,7 +1642,34 @@ export class Run {
   }
   drawCrew(g, s) {
     const c = s.crew;
+    // the front lip of the gun hatch goes over the waist, so the crew stand in the hole
+    const lip = () => {
+      const car = s.car, rim = art['car-hatch-rim'];
+      if (!rim || car.fx === undefined) return;
+      const hx = s.x + car.fx * HATCH_DY, hy = s.y + car.fy * HATCH_DY;
+      g.save(); g.beginPath(); g.rect(hx - HATCH_W, hy, HATCH_W * 2, HATCH_W); g.clip();
+      g.translate(hx, hy); g.rotate(car.a);
+      sprite(g, 'car-hatch-rim', 0, 0, HATCH_W, { px: rim.cx, py: rim.cy });
+      g.restore();
+    };
+    // wagon down: its gunners are knocked out and show as a flat white skull in the hatch until it is repaired
+    if (s.car.broken && !(c.drop > 0) && has('skull-flat')) {
+      const k = clamp((this.t - (s.car.brokeAt ?? -9)) / 0.3, 0, 1), pop = 1 + 0.35 * Math.sin(k * Math.PI);
+      const bob = Math.sin(this.t * 2.6 + c.bob) * 1.2;
+      g.fillStyle = 'rgba(29,36,64,.28)'; g.beginPath(); g.ellipse(s.x, s.y + 3, 12, 4.5, 0, 0, Math.PI * 2); g.fill();
+      // the skull itself is drawn after the smoke from the wreck, so it always reads
+      (this.skullQ ||= []).push({ x: s.x, y: s.y - 9 + bob, w: 27 * pop, rot: Math.sin(this.t * 1.7 + c.bob) * 0.08 });
+      lip();
+      return;
+    }
     const r = this.rig(s, c);
+    if (r.pose) {
+      g.fillStyle = 'rgba(29,36,64,.28)'; g.beginPath(); g.ellipse(s.x, r.foot, 14 * (1 - r.drop * 0.5), 5, 0, 0, Math.PI * 2); g.fill();
+      sprite(g, `crew-${c.type}-p${r.k}`, r.x, r.y, r.W, { px: r.pic.anc[0], py: r.pic.anc[1], flip: r.flip, rot: r.rot, sx: r.sq, sy: 1 / r.sq });
+      lip();
+      if (this.frozenT > 0 && s.car === this.cars[0]) sprite(g, 'fx-iceblock', s.x, s.y + 8, 40, { alpha: 0.72 * this.frozenK() });
+      return;
+    }
     if (r.body && r.arm) {
       const drop = c.drop > 0 ? c.drop : 0, lift = drop * 220;
       const bob = Math.sin(this.t * 7 + c.bob) * 0.8;
@@ -1449,11 +1700,143 @@ export class Run {
     if (!ok) crewStandIn(g, CREW[c.type].color, s.x, s.y - drop * 220, size);
   }
   // ---------- boss paper doll: generated yeti parts layered and turned at the neck, shoulders and hips ----------
+  // ---------- yeti ranged moves ----------
+  bossBegin(b, kind) {
+    const loco = this.cars[0];
+    if (kind === 'rock') {
+      // aims at a wagon with crew on it (or the engine), at the spot it will reach when the rock lands
+      const live = this.cars.filter((c, i) => c.join === 0 && !c.broken && (i === 0 || c.seats.some((s) => s.crew)));
+      const c = pick(live.length ? live : [loco]), T = 1.0, F = 0.8;
+      const p = this.fpt(c.d + this.speed * (T + F));
+      b.atk = { kind, t: 0, T, F, car: c, tx: p.x, ty: p.y };
+    } else {
+      b.atk = { kind, t: 0, T: 0.85, blow: 1.15, hit: 0, ang: Math.atan2(loco.y - b.y + 100, loco.x - b.x) };
+      sfx.whoosh();
+    }
+  }
+  bossMove(b, dt) {
+    const A = b.atk, loco = this.cars[0];
+    A.t += dt;
+    if (A.kind === 'rock') {
+      // the mark follows the wagon during the wind-up (where it will be when the rock comes down), and locks on release
+      if (!A.thrown) { if (!this.cars.includes(A.car)) A.car = loco; const p = this.fpt(A.car.d + this.speed * (Math.max(0, A.T - A.t) + A.F)); A.tx = p.x; A.ty = p.y; }
+      if (!A.thrown && A.t >= A.T) {
+        A.thrown = true; b.throwK = 1;
+        const h = b.hand || { x: b.x, y: b.y - 130 * BOSS_K };
+        this.rocks.push({ gx0: h.x, gy0: b.y, h0: Math.max(20, b.y - h.y), x1: A.tx, y1: A.ty, t: 0, T: A.F, rot: 0, vr: rand(6, 10) * (A.tx > b.x ? 1 : -1) });
+        sfx.whoosh();
+      }
+      if (A.thrown && A.t >= A.T + 0.35) { b.atk = null; b.atkT = 2.5; }
+      return;
+    }
+    // frost breath: rears back, then a cone of ice from the mouth that follows the engine; held on the engine it freezes it
+    const m = b.mouth || { x: b.x, y: b.y - 120 * BOSS_K };
+    if (A.t < A.T) {
+      if (Math.random() < 0.7) { const a = rand(0, Math.PI * 2), d = rand(30, 50); this.fx.dot(m.x + Math.cos(a) * d, m.y + Math.sin(a) * d, -Math.cos(a) * d * 2.4, -Math.sin(a) * d * 2.4, rand(2, 3.5), '#bfefff', 0.4, { drag: 0 }); }
+      A.ang = Math.atan2(loco.y - m.y, loco.x - m.x);
+      return;
+    }
+    const want = Math.atan2(loco.y - m.y, loco.x - m.x);
+    let da = want - A.ang; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2;
+    A.ang += clamp(da, -1.3 * dt, 1.3 * dt);
+    const L = 340, ex = loco.x - m.x, ey = loco.y - m.y, along = ex * Math.cos(A.ang) + ey * Math.sin(A.ang), off = Math.abs(-ex * Math.sin(A.ang) + ey * Math.cos(A.ang));
+    if (along > 0 && along < L + 40 && off < 26 + along * 0.2) { A.hit += dt; if (A.hit >= 0.3 && !(this.frozenT > 0)) this.freezeEngine(3); }
+    if (Math.random() < 0.5) { const k = rand(0.3, 1) * L; this.fx.dot(m.x + Math.cos(A.ang) * k, m.y + Math.sin(A.ang) * k, rand(-30, 30), rand(-30, 30), rand(2, 4), '#e6f9ff', 0.5); }
+    if (A.t >= A.T + A.blow) { b.atk = null; b.atkT = 2.6; }
+  }
+  freezeEngine(t) {
+    const c = this.cars[0];
+    this.frozenT = t; this.frozenAt = this.t;
+    this.fx.label(c.x, c.y - 40, 'FROZEN!', 24, '#7fe3ff', 1.3); this.fx.ring(c.x, c.y, 20, 110, '#bfefff', 0.45, 7);
+    this.fx.shake(0.3); sfx.hurt(); buzz([40, 30, 40]);
+  }
+  frozenK() { return clamp(Math.min((this.t - (this.frozenAt ?? 0)) / 0.15, this.frozenT / 0.3), 0, 1); }
+  thaw() {
+    const c = this.cars[0];
+    this.frozenT = 0;
+    this.fx.ring(c.x, c.y, 30, 120, '#d9f6ff', 0.4, 6);
+    for (let i = 0; i < 14; i++) { const a = rand(0, Math.PI * 2), f = rand(-0.45, 0.45) * c.l, sd = rand(-26, 26); this.fx.dot(c.x + c.fx * f - c.fy * sd, c.y + c.fy * f + c.fx * sd, Math.cos(a) * rand(80, 200), Math.sin(a) * rand(80, 200), rand(2.5, 4.5), '#bfefff', 0.6, { vz: rand(80, 200), g: 500, ink: '#6fb7d9' }); }
+  }
+  rockStep(dt) {
+    for (let i = this.rocks.length - 1; i >= 0; i--) {
+      const r = this.rocks[i];
+      r.t += dt; r.rot += r.vr * dt;
+      if (r.t < r.T) continue;
+      this.rocks.splice(i, 1);
+      const tx = r.x1, ty = r.y1, loco = this.cars[0];
+      this.fx.boom(tx, ty, 46); this.fx.ring(tx, ty, 16, 120, '#ffffff', 0.4, 7);
+      for (let k = 0; k < 6; k++) { const a = rand(0, Math.PI * 2); this.fx.spr(tx, ty - 6, `boss-ice-bit-${1 + (k % 4)}`, rand(11, 17), { vx: Math.cos(a) * rand(90, 170), vy: Math.sin(a) * rand(60, 120) - 40, vr: rand(-9, 9), drag: 2.2, life: 0.55, grow: 0 }); }
+      for (let k = 0; k < 12; k++) { const a = rand(0, Math.PI * 2); this.fx.dot(tx, ty, Math.cos(a) * 180, Math.sin(a) * 140, rand(3, 6), '#e3f6ff', 0.6, { vz: rand(100, 240), g: 600, ink: '#4f9fd0' }); }
+      let hit = false;
+      for (const c of this.cars) {
+        const f = clamp((tx - c.x) * c.fx + (ty - c.y) * c.fy, -c.l / 2, c.l / 2);
+        if (Math.hypot(tx - c.x - c.fx * f, ty - c.y - c.fy * f) < 62) { this.hurtCar(c, c === loco ? 30 : 36); hit = true; }
+      }
+      this.fx.shake(hit ? 0.6 : 0.3); sfx.boom(true); if (hit) buzz([30, 30, 50]);
+      for (const z of this.zs) if (!z.boss && !z.dead && Math.hypot(z.x - tx, z.y - ty) < 90) this.damage(z, 60, { kx: (z.x - tx) * 4, ky: (z.y - ty) * 4 });
+    }
+  }
+  // drawn over the world: rock landing marks, rocks in the air (shadow on the snow under them), the breath cone
+  drawBossFx(g) {
+    const b = this.boss;
+    if (b && b.atk && b.atk.kind === 'rock' && !b.atk.thrown && !b.dead) this.drawTarget(g, b.atk.tx, b.atk.ty, b.atk.t / (b.atk.T + b.atk.F));
+    for (const r of this.rocks) {
+      const k = r.t / r.T, gx = r.gx0 + (r.x1 - r.gx0) * k, gy = r.gy0 + (r.y1 - r.gy0) * k, h = r.h0 * (1 - k) + 4 * 150 * k * (1 - k);
+      this.drawTarget(g, r.x1, r.y1, (1 + r.t) / (1 + r.T));
+      g.fillStyle = `rgba(29,36,64,${0.15 + 0.2 * k})`; g.beginPath(); g.ellipse(gx, gy, 14 + 10 * k, 6 + 4 * k, 0, 0, Math.PI * 2); g.fill();
+      sprite(g, 'boss-ice', gx, gy - h, 40, { anchor: 'center', rot: r.rot });
+    }
+    if (b && b.rig && b.rig.view !== 'b') this.drawBreath(g, b);
+  }
+  drawBreath(g, b) {
+    if (!b.atk || b.atk.kind !== 'breath' || b.dead || b.atk.t < b.atk.T) return;
+    const A = b.atk, m = b.mouth || { x: b.x, y: b.y - 120 * BOSS_K }, u = A.t - A.T;
+    const grow = Math.min(1, u / 0.25), fade = Math.min(1, (A.blow - u) / 0.2), fl = 1 + Math.sin(this.t * 40) * 0.05;
+    fxs(g, 'fx-breath', m.x, m.y, 340 * grow, { rot: A.ang, ax: 0.03, h: 110 * grow * fl, alpha: fade });
+  }
+  drawTarget(g, x, y, k) {
+    // the marker closes in as the rock comes down, and blinks in the last moments
+    const s = 120 - 40 * clamp(k, 0, 1), blink = k > 0.7 ? 0.6 + 0.4 * Math.sin(this.t * 30) : 0.9;
+    fxs(g, 'fx-target', x, y, s, { h: s * 0.72, alpha: blink });
+  }
+  // boss hops: a jump from where it stands to (x, y), T seconds long, H high at the top
+  bossAhead(z, dt) {
+    const J = z.jump, k = Math.min(1, (J.t + dt) / J.T);
+    return { x: J.x0 + (J.x1 - J.x0) * k, y: J.y0 + (J.y1 - J.y0) * k };
+  }
+  bossJump(z, x, y, T, H, stomp) {
+    z.jump = { x0: z.x, y0: z.y, x1: x, y1: y, T, t: 0, H, stomp };
+    if (!stomp) this.fx.puff(z.x, z.y, 14, '#ffffff', 0.35);
+  }
+  // the next spot to hop to: open snow in the middle of the loop, toward where the engine is heading, so the
+  // whole crew keeps shooting it and the train does not hide it; clear of the wagons; far spots take a few hops
+  bossSpot(z, H) {
+    const loco = this.cars[0];
+    let best = null, bs = 1e9;
+    for (let i = 0; i < 12; i++) {
+      // round 20: out in the middle of the loop, on the side the engine is heading for, well clear of the rails
+      const A = this.fpt(loco.d + rand(0, 150)); let ax = A.x - H.x, ay = A.y - H.y; const al = Math.hypot(ax, ay) || 1;
+      const r = rand(25, 80);
+      let x = H.x + ax / al * r, y = H.y + ay / al * r;
+      let dx = x - z.x, dy = y - z.y, d = Math.hypot(dx, dy);
+      if (d > 220) { x = z.x + dx / d * 220; y = z.y + dy / d * 220; d = 220; }
+      if (d < 40) continue;
+      if (this.cars.some((c) => { const q = clamp((x - c.x) * c.fx + (y - c.y) * c.fy, -c.l / 2, c.l / 2); return Math.hypot(x - c.x - c.fx * q, y - c.y - c.fy * q) < 105; })) continue;
+      const sc = Math.abs(d - 90) + rand(0, 30);
+      if (sc < bs) { bs = sc; best = { x, y, d }; }
+    }
+    return best;
+  }
+  // a hop lands: snow kicks up, the ground shakes a little, small zombies right under it are knocked away
+  bossLand(z) {
+    this.fx.ring(z.x, z.y, 14, 95, '#d9f3ff', 0.35, 6); this.fx.shake(0.14, 0.4); sfx.plow();
+    for (let i = 0; i < 8; i++) { const a = rand(0, Math.PI * 2); this.fx.dot(z.x, z.y, Math.cos(a) * 140, Math.sin(a) * 100, rand(3, 6), '#ffffff', 0.5, { vz: rand(60, 160), g: 600, ink: '#9fb4cc' }); }
+  }
   bossRigStep(z, dt, speed) {
     if (!has('z-yeti-torso-f')) return;
     const r = z.rig || (z.rig = { view: 'f', want: 'f', hold: 0, walk: 0, mv: 0 });
     // face the stomp target, else the engine; front / side / back by where it is, held 0.2 s so it does not flicker
-    const tg = z.tele || this.cars[0];
+    const tg = z.tele || (z.atk && z.atk.kind === 'rock' ? { x: z.atk.tx, y: z.atk.ty } : null) || this.cars[0];
     const dx = tg.x - z.x, dy = tg.y - z.y;
     const want = Math.abs(dx) > Math.abs(dy) * 0.9 ? 's' : dy > 0 ? 'f' : 'b';
     if (want !== r.want) { r.want = want; r.hold = 0; }
@@ -1468,6 +1851,7 @@ export class Run {
     z.punch = Math.max(0, (z.punch || 0) - dt * 7);
     if (z.slam > 0) z.slam = Math.max(0, z.slam - dt);
     if (z.roarA > 0) z.roarA = Math.max(0, z.roarA - dt * 0.9);
+    z.throwK = Math.max(0, (z.throwK || 0) - dt * 3);
   }
   drawBoss(g, z) {
     const r = z.rig, P = YETI[r.view];
@@ -1485,18 +1869,27 @@ export class Run {
     const stg = z.stagger > 0 ? Math.min(1, (1.2 - z.stagger) / 0.12) * Math.min(1, z.stagger / 0.35) * live : 0; // reels back, sags
     const pun = (z.punch || 0) * live;
     const up = ease(tele) * (1 - slam);
+    // hops: crouch before take-off, legs tucked in the air, squash on landing
+    const JP = z.jump, air = JP && !z.dead ? Math.sin(Math.PI * clamp(JP.t / JP.T, 0, 1)) : 0;
+    const prep = z.dead || JP ? 0 : z.tele ? sstep(BOSS_LEAP + 0.3, BOSS_LEAP, z.atkT) : !z.atk && !(z.stagger > 0) && z.hopT != null ? sstep(0.22, 0, z.hopT) : 0;
+    const land = (z.landK || 0) * live;
+    // rock throw: one arm winds up over the head with the rock, then whips forward
+    const A = z.atk && !z.dead ? z.atk : null;
+    const rk = A && A.kind === 'rock' && !A.thrown ? ease(clamp(A.t / A.T, 0, 1)) : 0, thr = (z.throwK || 0) * live;
+    // frost breath: rears back, then leans in with the mouth wide open
+    const bw = A && A.kind === 'breath' ? (A.t < A.T ? ease(A.t / A.T) : 0) : 0, bb = A && A.kind === 'breath' && A.t >= A.T ? 1 : 0;
     const breath = Math.sin(t * 2.4), step = Math.sin(r.walk);
     const flip = r.view === 's' && r.side < 0;
     const fs = flip ? -1 : 1;
     // body sway: walking bob, hit wobble, recoil lean, roar shake
     const wob = Math.sin(t * 55) * z.hitK * 2.2 * live + (roar ? Math.sin(t * 70) * 1.6 * roar : 0) + Math.sin(t * 32) * 3 * stg;
-    const lean = -0.06 * up + 0.1 * slam * fs - 0.05 * (z.recoil || 0) * live * fs + (r.view === 's' ? 0.04 * r.mv * fs : 0) - 0.16 * stg * fs;
-    const sq = 1 + 0.1 * slam - 0.03 * up + 0.08 * pun + 0.06 * stg, sqy = 1 / sq * (1 + 0.012 * breath);
+    const lean = -0.1 * rk * fs + 0.14 * thr * fs - 0.12 * bw * fs + 0.08 * bb * fs - 0.06 * up + 0.1 * slam * fs - 0.05 * (z.recoil || 0) * live * fs + (r.view === 's' ? 0.04 * r.mv * fs : 0) - 0.16 * stg * fs;
+    const sq = 1 + 0.1 * slam - 0.03 * up + 0.08 * pun + 0.06 * stg + 0.1 * prep + 0.12 * land - 0.06 * air, sqy = 1 / sq * (1 + 0.012 * breath);
     const gx = z.x + (z.kickX || 0) * pun * 5, gy = z.y - z.h + (z.kickY || 0) * pun * 3;
     const lg = art[P.leg], legH = (1 - P.legPivot) * lg.srcH * P.legS * U;
-    const bob = -Math.abs(step) * 3 * r.mv + 4 * slam + 9 * stg;
-    // shadow
-    if (!z.dead || k < 0.6) { g.fillStyle = `rgba(40,60,100,${0.22 * (1 - k)})`; g.beginPath(); g.ellipse(gx, gy + 2, 52 + 10 * slam, 17, 0, 0, Math.PI * 2); g.fill(); }
+    const bob = -Math.abs(step) * 3 * r.mv + 4 * slam + 9 * stg + 10 * prep + 8 * land;
+    // shadow (stays on the snow while it is in the air, smaller the higher it goes)
+    if (!this._sil && (!z.dead || k < 0.6)) { const hs = 1 - Math.min(0.45, z.h / 260); g.fillStyle = `rgba(40,60,100,${0.22 * (1 - k) * hs})`; g.beginPath(); g.ellipse(z.x, z.y + 2, (52 + 10 * slam) * hs * BOSS_K, 17 * hs * BOSS_K, 0, 0, Math.PI * 2); g.fill(); }
     g.save();
     if (z.dead) g.globalAlpha = k < 0.7 ? 1 : 1 - (k - 0.7) / 0.3;
     // death: the parts come apart (head pops off, arms drop, body sinks)
@@ -1510,8 +1903,10 @@ export class Run {
     // legs
     const legs = P.hips.map((h, i) => {
       const j = J(h), ph = i ? Math.PI : 0, s1 = Math.sin(r.walk + ph);
-      const lift = Math.max(0, s1) * 7 * r.mv + (r.turn > 0 ? Math.sin(r.turn / 0.18 * Math.PI) * 6 * (i ? 1 : 0.4) : 0);
-      return () => part(P.leg, j.x + (r.view === 's' ? s1 * 6 * r.mv * fs : 0), j.y - lift + fall * 10, (r.view === 's' ? s1 * 0.35 * r.mv : s1 * 0.08 * r.mv) * fs + (i ? -1 : 1) * fall * 0.6, { s: P.legS, px: P.legPx, py: P.legPivot, flip: r.view === 's' ? flip : i === 1 });
+      const lift = Math.max(0, s1) * 7 * r.mv + (r.turn > 0 ? Math.sin(r.turn / 0.18 * Math.PI) * 6 * (i ? 1 : 0.4) : 0) + air * 16 - prep * 4;
+      // in the air the legs tuck: one forward, one back from the side, both kicked out from the front
+      const tuck = r.view === 's' ? air * (i ? -0.55 : 0.45) * fs : air * (i ? -0.3 : 0.3);
+      return () => part(P.leg, j.x + (r.view === 's' ? s1 * 6 * r.mv * fs : 0), j.y - lift + fall * 10, (r.view === 's' ? s1 * 0.35 * r.mv : s1 * 0.08 * r.mv) * fs + (i ? -1 : 1) * fall * 0.6 + tuck, { s: P.legS, px: P.legPx, py: P.legPivot, flip: r.view === 's' ? flip : i === 1 });
     });
     // arms: 0 = hanging; positive swings the hand out to the left of the picture
     const armA = (i) => {
@@ -1520,7 +1915,10 @@ export class Run {
       a += out * up * 2.55 + out * roar * 1.1;               // overhead for the stomp, spread wide to roar
       a -= out * slam * 0.4;
       a += out * stg * (0.6 + 0.15 * Math.sin(t * 20 + i));         // arms flung out while it reels
-      if (r.view === 's') a = (i ? -1 : 1) * step * 0.3 * r.mv - up * 2.6 * fs + slam * 0.9 * fs + roar * -1.2 * fs + stg * (i ? 0.9 : -0.5) * fs;
+      if (!z.tele) a += out * (1.1 * air - 0.35 * prep + 0.3 * land); // arms thrown up for a hop
+      if (r.view === 's') a = (i ? -1 : 1) * step * 0.3 * r.mv + up * 2.5 * fs - slam * 0.7 * fs + roar * -1.2 * fs + stg * (i ? 0.9 : -0.5) * fs + (z.tele ? 0 : (1.3 * air - 0.5 * prep) * fs);
+      if (i === 0) a += r.view === 's' ? (2.5 * rk - 1.3 * thr) * fs : out * (2.7 * rk - 0.9 * thr);
+      else a += r.view === 's' ? 0.5 * bw * fs : out * 0.5 * (bw + bb);
       return a + out * fall * 1.4;
     };
     const arms = P.sh.map((h, i) => {
@@ -1532,19 +1930,59 @@ export class Run {
       };
     });
     const head = () => {
-      const j = J(P.neck), hn = (roar > 0.25 || tele > 0.45) ? P.roar : P.head;
-      const tilt = -0.08 * up * fs - 0.12 * roar + Math.sin(t * 1.7) * 0.03 + (z.recoil || 0) * -0.08 * fs - 0.2 * stg * fs;
-      part(hn, j.x + Math.sin(t * 2.4 + 0.6) * 0.8, j.y + breath * 0.8 - fall * 60 + fall * fall * 80, tilt + fall * 1.8 * fs, { s: P.headS, px: P.neckPx, py: P.neckPivot, flip });
+      const j = J(P.neck), hn = (roar > 0.25 || tele > 0.45 || bw > 0.3 || bb) ? P.roar : P.head;
+      const tilt = -0.08 * up * fs - 0.12 * roar + Math.sin(t * 1.7) * 0.03 + (z.recoil || 0) * -0.08 * fs - 0.2 * stg * fs - 0.3 * bw * fs + (bb ? 0.12 * fs + Math.sin(t * 60) * 0.02 : 0);
+      const hx = j.x + Math.sin(t * 2.4 + 0.6) * 0.8, hy = j.y + breath * 0.8 - fall * 60 + fall * fall * 80;
+      part(hn, hx, hy, tilt + fall * 1.8 * fs, { s: P.headS, px: P.neckPx, py: P.neckPivot, flip });
+      // where the breath comes out: the mouth, forward and up from the neck (turned with the head)
+      const ha = art[hn], Hh = ha ? ha.srcH * U * P.headS : 40, mx = r.view === 's' ? 0.3 * Hh * fs : 0, my = r.view === 'b' ? -0.4 * Hh : r.view === 's' ? -0.32 * Hh : -0.2 * Hh;
+      const ct = Math.cos(tilt), st = Math.sin(tilt);
+      z.mouth = { x: hx + mx * ct - my * st, y: hy + mx * st + my * ct };
     };
     const torso = () => part(P.torso, cx, hipY + fall * 8, lean, { px: 0.5, py: P.hipY, flip, sx: sq, sy: sqy });
+    if (r.view === 'b' && !this._sil) this.drawBreath(g, z);
     if (r.view === 's') { arms[1](); legs[1](); legs[0](); torso(); head(); arms[0](); }
     else if (r.view === 'b') { legs.forEach((f) => f()); torso(); head(); arms.forEach((f) => f()); }
     else { legs.forEach((f) => f()); torso(); arms.forEach((f) => f()); head(); }
-    if (this.dbgRig) { g.globalAlpha = 1; for (const j of [P.neck, ...P.sh, ...P.hips]) { const q = J(j); g.fillStyle = '#ff2040'; g.beginPath(); g.arc(q.x, q.y, 2.2, 0, 7); g.fill(); } }
+    // the hand of the throwing arm (the rock sits in it during the wind-up)
+    { const j = J(P.sh[0]), a = armA(0), aa = art[P.arm[0]], L = aa ? aa.srcH * U * P.armS * (1 - P.armPivot) * 0.9 : 40;
+      z.hand = { x: j.x - Math.sin(a) * L, y: j.y + Math.cos(a) * L };
+      if (rk > 0.05) sprite(g, 'boss-ice', z.hand.x, z.hand.y, 40 * (0.5 + 0.5 * Math.min(1, rk * 2)), { anchor: 'center', rot: t * 0.5 }); }
+    if (this.dbgRig && !this._sil) { g.globalAlpha = 1; for (const j of [P.neck, ...P.sh, ...P.hips]) { const q = J(j); g.fillStyle = '#ff2040'; g.beginPath(); g.arc(q.x, q.y, 2.2, 0, 7); g.fill(); } for (const [q, c] of [[z.mouth, '#00c040'], [z.hand, '#00a0ff']]) if (q) { g.fillStyle = c; g.beginPath(); g.arc(q.x, q.y, 2.6, 0, 7); g.fill(); } }
     g.restore();
   }
+  // round 20: a red outline round the yeti, drawn over the train, the crew, the shots and the smoke, so it can be
+  // followed through a busy fight. It is burned from the yeti's own picture: the pose is drawn again into a small
+  // canvas, spread out a few pixels, filled red, and the yeti's own shape cut back out, leaving just the edge.
+  drawBossOutline(g, dpr) {
+    const { z, m } = this.bossDrawn;
+    const fade = z.dead ? 1 - clamp((z.dying / 1.6 - 0.5) / 0.3, 0, 1) : 1;
+    if (fade <= 0) return;
+    const K = BOSS_K, top = z.y - z.h - 175 * K, x0 = z.x - 120 * K, x1 = z.x + 120 * K, y1 = z.y + 20;
+    const pts = [[x0, top], [x1, top], [x0, y1], [x1, y1]].map(([x, y]) => m.transformPoint(new DOMPoint(x, y)));
+    const w = Math.max(3, Math.round(3.5 * dpr)), pad = w + 2;
+    const bx = Math.floor(Math.min(...pts.map((p) => p.x))) - pad, by = Math.floor(Math.min(...pts.map((p) => p.y))) - pad;
+    const bw = Math.ceil(Math.max(...pts.map((p) => p.x))) + pad - bx, bh = Math.ceil(Math.max(...pts.map((p) => p.y))) + pad - by;
+    if (bw <= 0 || bh <= 0 || bw > 4096 || bh > 4096) return;
+    // burned at one pixel per screen point (not the full phone resolution) to keep it cheap, then scaled up
+    const q = Math.min(1, 1 / dpr), qw = Math.ceil(bw * q), qh = Math.ceil(bh * q), ow = w * q;
+    const mk = (c) => { if (!c) c = document.createElement('canvas'); if (c.width < qw) c.width = qw; if (c.height < qh) c.height = qh; return c; };
+    const S = (this.silCv = mk(this.silCv)), O = (this.olCv = mk(this.olCv));
+    const s = S.getContext('2d'), o = O.getContext('2d');
+    s.setTransform(1, 0, 0, 1, 0, 0); s.clearRect(0, 0, qw, qh);
+    s.setTransform(m.a * q, m.b * q, m.c * q, m.d * q, (m.e - bx) * q, (m.f - by) * q);
+    const keep = { mouth: z.mouth, hand: z.hand };
+    this._sil = true; try { this.drawBoss(s, z); } finally { this._sil = false; }
+    z.mouth = keep.mouth; z.hand = keep.hand;
+    o.setTransform(1, 0, 0, 1, 0, 0); o.globalCompositeOperation = 'source-over'; o.clearRect(0, 0, qw, qh);
+    for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; o.drawImage(S, 0, 0, qw, qh, Math.cos(a) * ow, Math.sin(a) * ow, qw, qh); }
+    o.globalCompositeOperation = 'source-in'; o.fillStyle = '#ff1f3a'; o.fillRect(0, 0, qw, qh);
+    o.globalCompositeOperation = 'destination-out'; o.drawImage(S, 0, 0, qw, qh, 0, 0, qw, qh);
+    o.globalCompositeOperation = 'source-over';
+    g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = fade; g.imageSmoothingEnabled = false; g.drawImage(O, 0, 0, qw, qh, bx, by, bw, bh); g.restore();
+  }
   drawZombie(g, z) {
-    if (z.boss && z.rig) { this.drawBoss(g, z); return; }
+    if (z.boss && z.rig) { this.drawBoss(g, z); this.bossDrawn = { z, m: g.getTransform() }; return; }
     const H = 44 * (z.scale || 1) * (z.boss ? 3.1 : 1), sz = H * 0.78;
     const side = (z.att || z.side) && has(z.sprite + '-s');
     const k = z.dead ? z.dying / 0.24 : 0;
@@ -1555,9 +1993,13 @@ export class Run {
     // new art faces right, so mirror when walking left
     const o = { flip: !z.flip, rot: z.rot + walk, sx, sy, flash: z.dead ? 1 : z.flash > 0 ? 1 : 0, ice: z.slowT > 0, byH: true };
     if (z.boss && z.slam > 0) { z.slam -= 1 / 60; o.sy *= 0.85; o.sx *= 1.12; }
+    // runner pounce: squat low before the jump, lean forward in the air
+    if (z.crouch > 0) { o.sy *= 0.76; o.sx *= 1.16; o.rot = (z.flip ? 0.12 : -0.12); }
+    if (z.leap) { const k = Math.min(1, z.leap.t / z.leap.cfg.T); o.rot = (z.flip ? 1 : -1) * (0.55 - 0.7 * k); o.sy *= 1.08 - 0.1 * k; }
     // hit squash: a quick wide-and-short wobble on every hit so each shot visibly lands
     if (!z.dead && z.flash > 0) { const q = z.flash / 0.09; o.sx *= 1 + 0.16 * q; o.sy *= 1 - 0.13 * q; }
-    if (!sprite(g, side ? z.sprite + '-s' : z.sprite, z.x, z.y - z.h, H, o)) zombieStandIn(g, z.sprite, z.x, z.y - z.h, sz, o);
+    // jointed zombie (zrig.js) first; the single picture stays as the fallback while parts load or are missing
+    if (!drawZRig(g, z, this.t, H, o) && !sprite(g, side ? z.sprite + '-s' : z.sprite, z.x, z.y - z.h, H, o)) zombieStandIn(g, z.sprite, z.x, z.y - z.h, sz, o);
     g.globalAlpha = 1;
     if ((z.mini || z.heavy && z.type !== 'shield') && !z.dead && !z.boss && z.hp < z.max) {
       const w = 40, y = z.y - H * 1.05;
@@ -1715,8 +2157,9 @@ export class Run {
     return out;
   }
   // true when nothing of the route passes within `clear` of world point (x, y) (checked along d0 +- 900)
+  // checks the whole line, not just the stretch near d0: the route doubles back past itself on the way into the boss ring
   offTrack(x, y, d0, clear) {
-    for (let d = Math.max(-3000, d0 - 900); d <= Math.min(d0 + 900, this.loopD + this.loopLen); d += 24) { const p = this.pathAt(d); if (Math.hypot(p.x - x, p.y - y) < clear) return false; }
+    for (let d = -3000; d <= this.loopD + this.loopLen; d += 24) { const p = this.pathAt(d); if (Math.abs(p.x - x) < clear && Math.abs(p.y - y) < clear && Math.hypot(p.x - x, p.y - y) < clear) return false; }
     return true;
   }
   // the inside of the boss ring stays clear, and nothing stands on the ring itself
