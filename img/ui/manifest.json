@@ -1,0 +1,532 @@
+{
+ "ui-panel": {
+  "file": "ui-panel.webp",
+  "srcW": 609,
+  "srcH": 306
+ },
+ "ui-pill": {
+  "file": "ui-pill.webp",
+  "srcW": 556,
+  "srcH": 129
+ },
+ "ui-disc": {
+  "file": "ui-disc.webp",
+  "srcW": 220,
+  "srcH": 227
+ },
+ "ui-btn-orange": {
+  "file": "ui-btn-orange.webp",
+  "srcW": 470,
+  "srcH": 142
+ },
+ "ui-btn-blue": {
+  "file": "ui-btn-blue.webp",
+  "srcW": 471,
+  "srcH": 142
+ },
+ "ui-fill-blue": {
+  "file": "ui-fill-blue.webp",
+  "srcW": 380,
+  "srcH": 60
+ },
+ "ui-fill-red": {
+  "file": "ui-fill-red.webp",
+  "srcW": 381,
+  "srcH": 60
+ },
+ "ui-fill-green": {
+  "file": "ui-fill-green.webp",
+  "srcW": 380,
+  "srcH": 60
+ },
+ "ui-snow-l": {
+  "file": "ui-snow-l.webp",
+  "srcW": 217,
+  "srcH": 101
+ },
+ "ui-snow-r": {
+  "file": "ui-snow-r.webp",
+  "srcW": 220,
+  "srcH": 105
+ },
+ "ui-ribbon": {
+  "file": "ui-ribbon.webp",
+  "srcW": 609,
+  "srcH": 152
+ },
+ "ui-route-board": {
+  "file": "ui-route-board.webp",
+  "srcW": 799,
+  "srcH": 260
+ },
+ "ui-beacon-lit": {
+  "file": "ui-beacon-lit.webp",
+  "srcW": 316,
+  "srcH": 234
+ },
+ "ui-chain": {
+  "file": "ui-chain.webp",
+  "srcW": 72,
+  "srcH": 311
+ },
+ "ui-dial": {
+  "file": "ui-dial.webp",
+  "srcW": 300,
+  "srcH": 304
+ },
+ "ui-dial-ring": {
+  "file": "ui-dial-ring.webp",
+  "srcW": 263,
+  "srcH": 267
+ },
+ "ui-sign-green": {
+  "file": "ui-sign-green.webp",
+  "srcW": 380,
+  "srcH": 256
+ },
+ "ui-sign-red": {
+  "file": "ui-sign-red.webp",
+  "srcW": 380,
+  "srcH": 256
+ },
+ "ui-sign-yellow": {
+  "file": "ui-sign-yellow.webp",
+  "srcW": 374,
+  "srcH": 253
+ },
+ "ui-sign-purple": {
+  "file": "ui-sign-purple.webp",
+  "srcW": 386,
+  "srcH": 254
+ },
+ "ui-beacon-glow": {
+  "file": "ui-beacon-glow.webp",
+  "srcW": 300,
+  "srcH": 243
+ },
+ "l-depot": {
+  "file": "l-depot.webp",
+  "srcW": 353,
+  "srcH": 302
+ },
+ "l-pass": {
+  "file": "l-pass.webp",
+  "srcW": 342,
+  "srcH": 288
+ },
+ "l-daily": {
+  "file": "l-daily.webp",
+  "srcW": 355,
+  "srcH": 331
+ },
+ "l-convoy": {
+  "file": "l-convoy.webp",
+  "srcW": 395,
+  "srcH": 301
+ },
+ "l-shop": {
+  "file": "l-shop.webp",
+  "srcW": 267,
+  "srcH": 217
+ },
+ "l-crew": {
+  "file": "l-crew.webp",
+  "srcW": 322,
+  "srcH": 207
+ },
+ "l-battle": {
+  "file": "l-battle.webp",
+  "srcW": 260,
+  "srcH": 230
+ },
+ "l-train": {
+  "file": "l-train.webp",
+  "srcW": 261,
+  "srcH": 263
+ },
+ "l-rails": {
+  "file": "l-rails.webp",
+  "srcW": 315,
+  "srcH": 231
+ },
+ "card-green": {
+  "file": "card-green.webp",
+  "srcW": 354,
+  "srcH": 563
+ },
+ "card-blue": {
+  "file": "card-blue.webp",
+  "srcW": 354,
+  "srcH": 563
+ },
+ "card-orange": {
+  "file": "card-orange.webp",
+  "srcW": 354,
+  "srcH": 563
+ },
+ "ui-title": {
+  "file": "ui-title.webp",
+  "srcW": 728,
+  "srcH": 204
+ },
+ "card-gold": {
+  "file": "card-gold.webp",
+  "srcW": 354,
+  "srcH": 563
+ },
+ "ca-rate": {
+  "file": "ca-rate.webp",
+  "srcW": 386,
+  "srcH": 390
+ },
+ "ca-dmg": {
+  "file": "ca-dmg.webp",
+  "srcW": 389,
+  "srcH": 394
+ },
+ "ca-magnet": {
+  "file": "ca-magnet.webp",
+  "srcW": 390,
+  "srcH": 394
+ },
+ "ca-crit": {
+  "file": "ca-crit.webp",
+  "srcW": 386,
+  "srcH": 390
+ },
+ "ca-wagon": {
+  "file": "ca-wagon.webp",
+  "srcW": 387,
+  "srcH": 391
+ },
+ "ca-plow": {
+  "file": "ca-plow.webp",
+  "srcW": 394,
+  "srcH": 391
+ },
+ "ca-armor": {
+  "file": "ca-armor.webp",
+  "srcW": 386,
+  "srcH": 394
+ },
+ "ca-repair": {
+  "file": "ca-repair.webp",
+  "srcW": 388,
+  "srcH": 393
+ },
+ "ca-steam": {
+  "file": "ca-steam.webp",
+  "srcW": 390,
+  "srcH": 394
+ },
+ "cp-captain": {
+  "file": "cp-captain.webp",
+  "srcW": 385,
+  "srcH": 372
+ },
+ "cp-gunner": {
+  "file": "cp-gunner.webp",
+  "srcW": 372,
+  "srcH": 372
+ },
+ "cp-rocket": {
+  "file": "cp-rocket.webp",
+  "srcW": 390,
+  "srcH": 372
+ },
+ "cp-flamer": {
+  "file": "cp-flamer.webp",
+  "srcW": 381,
+  "srcH": 373
+ },
+ "cp-sniper": {
+  "file": "cp-sniper.webp",
+  "srcW": 388,
+  "srcH": 373
+ },
+ "cp-shotgun": {
+  "file": "cp-shotgun.webp",
+  "srcW": 401,
+  "srcH": 372
+ },
+ "cp-tesla": {
+  "file": "cp-tesla.webp",
+  "srcW": 414,
+  "srcH": 376
+ },
+ "cp-frost": {
+  "file": "cp-frost.webp",
+  "srcW": 420,
+  "srcH": 379
+ },
+ "i-train": {
+  "file": "i-train.webp",
+  "srcW": 220,
+  "srcH": 237
+ },
+ "i-chest": {
+  "file": "i-chest.webp",
+  "srcW": 191,
+  "srcH": 165
+ },
+ "i-skull": {
+  "file": "i-skull.webp",
+  "srcW": 176,
+  "srcH": 173
+ },
+ "i-skull-pink": {
+  "file": "i-skull-pink.webp",
+  "srcW": 177,
+  "srcH": 175
+ },
+ "i-coin": {
+  "file": "i-coin.webp",
+  "srcW": 182,
+  "srcH": 186
+ },
+ "i-gem": {
+  "file": "i-gem.webp",
+  "srcW": 200,
+  "srcH": 172
+ },
+ "i-fuel": {
+  "file": "i-fuel.webp",
+  "srcW": 182,
+  "srcH": 214
+ },
+ "i-gear": {
+  "file": "i-gear.webp",
+  "srcW": 190,
+  "srcH": 185
+ },
+ "i-star": {
+  "file": "i-star.webp",
+  "srcW": 197,
+  "srcH": 184
+ },
+ "i-star-empty": {
+  "file": "i-star-empty.webp",
+  "srcW": 193,
+  "srcH": 181
+ },
+ "i-emerald": {
+  "file": "i-emerald.webp",
+  "srcW": 148,
+  "srcH": 188
+ },
+ "i-ad": {
+  "file": "i-ad.webp",
+  "srcW": 212,
+  "srcH": 163
+ },
+ "i-plus": {
+  "file": "i-plus.webp",
+  "srcW": 158,
+  "srcH": 153
+ },
+ "i-chev": {
+  "file": "i-chev.webp",
+  "srcW": 112,
+  "srcH": 160
+ },
+ "i-steam": {
+  "file": "i-steam.webp",
+  "srcW": 260,
+  "srcH": 265
+ },
+ "i-steam-ring": {
+  "file": "i-steam-ring.webp",
+  "srcW": 252,
+  "srcH": 261
+ },
+ "i-pause": {
+  "file": "i-pause.webp",
+  "srcW": 155,
+  "srcH": 167
+ },
+ "i-lock": {
+  "file": "i-lock.webp",
+  "srcW": 188,
+  "srcH": 212
+ },
+ "i-wrench": {
+  "file": "i-wrench.webp",
+  "srcW": 217,
+  "srcH": 211
+ },
+ "i-crown": {
+  "file": "i-crown.webp",
+  "srcW": 254,
+  "srcH": 213
+ },
+ "ui-btn-green": {
+  "file": "ui-btn-green.webp",
+  "srcW": 298,
+  "srcH": 103
+ },
+ "ui-btn-red": {
+  "file": "ui-btn-red.webp",
+  "srcW": 298,
+  "srcH": 103
+ },
+ "ui-btn-purple": {
+  "file": "ui-btn-purple.webp",
+  "srcW": 298,
+  "srcH": 103
+ },
+ "ui-btn-gray": {
+  "file": "ui-btn-gray.webp",
+  "srcW": 299,
+  "srcH": 103
+ },
+ "ui-close": {
+  "file": "ui-close.webp",
+  "srcW": 204,
+  "srcH": 208
+ },
+ "ui-stop-gold": {
+  "file": "ui-stop-gold.webp",
+  "srcW": 204,
+  "srcH": 209
+ },
+ "ui-stop-lock": {
+  "file": "ui-stop-lock.webp",
+  "srcW": 204,
+  "srcH": 209
+ },
+ "ui-fill-yellow": {
+  "file": "ui-fill-yellow.webp",
+  "srcW": 469,
+  "srcH": 112
+ },
+ "ui-ribbon-red": {
+  "file": "ui-ribbon-red.webp",
+  "srcW": 294,
+  "srcH": 106
+ },
+ "ui-ribbon-green": {
+  "file": "ui-ribbon-green.webp",
+  "srcW": 294,
+  "srcH": 105
+ },
+ "ui-ribbon-blue": {
+  "file": "ui-ribbon-blue.webp",
+  "srcW": 294,
+  "srcH": 105
+ },
+ "ui-ribbon-purple": {
+  "file": "ui-ribbon-purple.webp",
+  "srcW": 294,
+  "srcH": 105
+ },
+ "ui-tile": {
+  "file": "ui-tile.webp",
+  "srcW": 261,
+  "srcH": 299
+ },
+ "ui-stat": {
+  "file": "ui-stat.webp",
+  "srcW": 692,
+  "srcH": 255
+ },
+ "ui-warn": {
+  "file": "ui-warn.webp",
+  "srcW": 1192,
+  "srcH": 261
+ },
+ "ui-boss-tab": {
+  "file": "ui-boss-tab.webp",
+  "srcW": 505,
+  "srcH": 125
+ },
+ "ui-switch-on": {
+  "file": "ui-switch-on.webp",
+  "srcW": 287,
+  "srcH": 128
+ },
+ "ui-switch-off": {
+  "file": "ui-switch-off.webp",
+  "srcW": 286,
+  "srcH": 128
+ },
+ "ui-por-ring": {
+  "file": "ui-por-ring.webp",
+  "srcW": 411,
+  "srcH": 421
+ },
+ "ui-check": {
+  "file": "ui-check.webp",
+  "srcW": 242,
+  "srcH": 246
+ },
+ "cf-orange": {
+  "file": "cf-orange.webp",
+  "srcW": 170,
+  "srcH": 308
+ },
+ "cf-blue": {
+  "file": "cf-blue.webp",
+  "srcW": 172,
+  "srcH": 308
+ },
+ "cf-yellow": {
+  "file": "cf-yellow.webp",
+  "srcW": 174,
+  "srcH": 308
+ },
+ "cf-pink": {
+  "file": "cf-pink.webp",
+  "srcW": 148,
+  "srcH": 194
+ },
+ "cf-green": {
+  "file": "cf-green.webp",
+  "srcW": 148,
+  "srcH": 196
+ },
+ "cf-purple": {
+  "file": "cf-purple.webp",
+  "srcW": 151,
+  "srcH": 205
+ },
+ "cf-red": {
+  "file": "cf-red.webp",
+  "srcW": 177,
+  "srcH": 319
+ },
+ "cf-star": {
+  "file": "cf-star.webp",
+  "srcW": 196,
+  "srcH": 195
+ },
+ "ui-spark-l": {
+  "file": "ui-spark-l.webp",
+  "srcW": 159,
+  "srcH": 226
+ },
+ "ui-spark-r": {
+  "file": "ui-spark-r.webp",
+  "srcW": 157,
+  "srcH": 227
+ },
+ "cp-saw": {
+  "file": "cp-saw.webp",
+  "srcW": 549,
+  "srcH": 558
+ },
+ "cp-mortar": {
+  "file": "cp-mortar.webp",
+  "srcW": 557,
+  "srcH": 558
+ },
+ "cp-laser": {
+  "file": "cp-laser.webp",
+  "srcW": 553,
+  "srcH": 567
+ },
+ "cp-harpoon": {
+  "file": "cp-harpoon.webp",
+  "srcW": 577,
+  "srcH": 570
+ }
+}
