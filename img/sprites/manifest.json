@@ -4,26 +4,6 @@
   "srcW": 345,
   "srcH": 698
  },
- "car-wagon2": {
-  "file": "car-wagon2.webp",
-  "srcW": 351,
-  "srcH": 633
- },
- "car-wagon1": {
-  "file": "car-wagon1.webp",
-  "srcW": 351,
-  "srcH": 637
- },
- "car-tender": {
-  "file": "car-tender.webp",
-  "srcW": 366,
-  "srcH": 640
- },
- "car-caboose": {
-  "file": "car-caboose.webp",
-  "srcW": 327,
-  "srcH": 640
- },
  "crew-gunner": {
   "file": "crew-gunner.webp",
   "srcW": 273,
@@ -66,43 +46,43 @@
  },
  "z-walker": {
   "file": "z-walker.webp",
-  "srcW": 241,
-  "srcH": 349
+  "srcW": 296,
+  "srcH": 418
  },
  "z-hardhat": {
   "file": "z-hardhat.webp",
-  "srcW": 252,
-  "srcH": 347
+  "srcW": 298,
+  "srcH": 404
  },
  "z-pot": {
   "file": "z-pot.webp",
-  "srcW": 252,
-  "srcH": 354
+  "srcW": 313,
+  "srcH": 404
  },
  "z-runner": {
   "file": "z-runner.webp",
-  "srcW": 260,
-  "srcH": 335
+  "srcW": 278,
+  "srcH": 400
  },
  "z-bloater": {
   "file": "z-bloater.webp",
-  "srcW": 287,
-  "srcH": 362
+  "srcW": 315,
+  "srcH": 425
  },
  "z-brute": {
   "file": "z-brute.webp",
-  "srcW": 319,
-  "srcH": 368
+  "srcW": 323,
+  "srcH": 441
  },
  "z-shield": {
   "file": "z-shield.webp",
-  "srcW": 229,
-  "srcH": 378
+  "srcW": 256,
+  "srcH": 421
  },
  "z-yeti": {
   "file": "z-yeti.webp",
-  "srcW": 383,
-  "srcH": 566
+  "srcW": 332,
+  "srcH": 442
  },
  "tree-big": {
   "file": "tree-big.webp",
@@ -288,5 +268,861 @@
   "file": "play.webp",
   "srcW": 219,
   "srcH": 222
+ },
+ "z-walker-s": {
+  "file": "z-walker-s.webp",
+  "srcW": 324,
+  "srcH": 394
+ },
+ "z-runner-s": {
+  "file": "z-runner-s.webp",
+  "srcW": 305,
+  "srcH": 370
+ },
+ "z-hardhat-s": {
+  "file": "z-hardhat-s.webp",
+  "srcW": 334,
+  "srcH": 388
+ },
+ "z-pot-s": {
+  "file": "z-pot-s.webp",
+  "srcW": 364,
+  "srcH": 395
+ },
+ "z-bloater-s": {
+  "file": "z-bloater-s.webp",
+  "srcW": 358,
+  "srcH": 424
+ },
+ "z-shield-s": {
+  "file": "z-shield-s.webp",
+  "srcW": 298,
+  "srcH": 414
+ },
+ "z-brute-s": {
+  "file": "z-brute-s.webp",
+  "srcW": 375,
+  "srcH": 416
+ },
+ "z-yeti-s": {
+  "file": "z-yeti-s.webp",
+  "srcW": 375,
+  "srcH": 424
+ },
+ "crew-captain-f": {
+  "file": "crew-captain-f.webp",
+  "srcW": 199,
+  "srcH": 289
+ },
+ "crew-captain-s": {
+  "file": "crew-captain-s.webp",
+  "srcW": 182,
+  "srcH": 286
+ },
+ "crew-captain-b": {
+  "file": "crew-captain-b.webp",
+  "srcW": 200,
+  "srcH": 287
+ },
+ "crew-captain-arm": {
+  "file": "crew-captain-arm.webp",
+  "srcW": 414,
+  "srcH": 151,
+  "piv": [
+   0.1,
+   0.432
+  ],
+  "tip": [
+   0.98,
+   0.255
+  ]
+ },
+ "crew-gunner-f": {
+  "file": "crew-gunner-f.webp",
+  "srcW": 196,
+  "srcH": 264
+ },
+ "crew-gunner-s": {
+  "file": "crew-gunner-s.webp",
+  "srcW": 183,
+  "srcH": 263
+ },
+ "crew-gunner-b": {
+  "file": "crew-gunner-b.webp",
+  "srcW": 196,
+  "srcH": 262
+ },
+ "crew-gunner-arm": {
+  "file": "crew-gunner-arm.webp",
+  "srcW": 414,
+  "srcH": 157,
+  "piv": [
+   0.1,
+   0.439
+  ],
+  "tip": [
+   0.98,
+   0.46
+  ]
+ },
+ "crew-flamer-f": {
+  "file": "crew-flamer-f.webp",
+  "srcW": 204,
+  "srcH": 272
+ },
+ "crew-flamer-s": {
+  "file": "crew-flamer-s.webp",
+  "srcW": 218,
+  "srcH": 276
+ },
+ "crew-flamer-b": {
+  "file": "crew-flamer-b.webp",
+  "srcW": 211,
+  "srcH": 277
+ },
+ "crew-flamer-arm": {
+  "file": "crew-flamer-arm.webp",
+  "srcW": 405,
+  "srcH": 164,
+  "piv": [
+   0.1,
+   0.495
+  ],
+  "tip": [
+   0.98,
+   0.453
+  ]
+ },
+ "crew-rocket-f": {
+  "file": "crew-rocket-f.webp",
+  "srcW": 191,
+  "srcH": 259
+ },
+ "crew-rocket-s": {
+  "file": "crew-rocket-s.webp",
+  "srcW": 200,
+  "srcH": 257
+ },
+ "crew-rocket-b": {
+  "file": "crew-rocket-b.webp",
+  "srcW": 192,
+  "srcH": 258
+ },
+ "crew-rocket-arm": {
+  "file": "crew-rocket-arm.webp",
+  "srcW": 413,
+  "srcH": 153,
+  "piv": [
+   0.1,
+   0.459
+  ],
+  "tip": [
+   0.98,
+   0.418
+  ]
+ },
+ "crew-sniper-f": {
+  "file": "crew-sniper-f.webp",
+  "srcW": 184,
+  "srcH": 304
+ },
+ "crew-sniper-s": {
+  "file": "crew-sniper-s.webp",
+  "srcW": 184,
+  "srcH": 301
+ },
+ "crew-sniper-b": {
+  "file": "crew-sniper-b.webp",
+  "srcW": 183,
+  "srcH": 303
+ },
+ "crew-sniper-arm": {
+  "file": "crew-sniper-arm.webp",
+  "srcW": 434,
+  "srcH": 193,
+  "piv": [
+   0.1,
+   0.461
+  ],
+  "tip": [
+   0.98,
+   0.319
+  ]
+ },
+ "crew-shotgun-f": {
+  "file": "crew-shotgun-f.webp",
+  "srcW": 223,
+  "srcH": 266
+ },
+ "crew-shotgun-s": {
+  "file": "crew-shotgun-s.webp",
+  "srcW": 192,
+  "srcH": 264
+ },
+ "crew-shotgun-b": {
+  "file": "crew-shotgun-b.webp",
+  "srcW": 213,
+  "srcH": 262
+ },
+ "crew-shotgun-arm": {
+  "file": "crew-shotgun-arm.webp",
+  "srcW": 397,
+  "srcH": 153,
+  "piv": [
+   0.1,
+   0.47
+  ],
+  "tip": [
+   0.98,
+   0.267
+  ]
+ },
+ "crew-tesla-f": {
+  "file": "crew-tesla-f.webp",
+  "srcW": 189,
+  "srcH": 275
+ },
+ "crew-tesla-s": {
+  "file": "crew-tesla-s.webp",
+  "srcW": 186,
+  "srcH": 275
+ },
+ "crew-tesla-b": {
+  "file": "crew-tesla-b.webp",
+  "srcW": 189,
+  "srcH": 274
+ },
+ "crew-tesla-arm": {
+  "file": "crew-tesla-arm.webp",
+  "srcW": 422,
+  "srcH": 167,
+  "piv": [
+   0.1,
+   0.5
+  ],
+  "tip": [
+   0.98,
+   0.194
+  ]
+ },
+ "crew-frost-f": {
+  "file": "crew-frost-f.webp",
+  "srcW": 221,
+  "srcH": 275
+ },
+ "crew-frost-s": {
+  "file": "crew-frost-s.webp",
+  "srcW": 204,
+  "srcH": 273
+ },
+ "crew-frost-b": {
+  "file": "crew-frost-b.webp",
+  "srcW": 217,
+  "srcH": 275
+ },
+ "crew-frost-arm": {
+  "file": "crew-frost-arm.webp",
+  "srcW": 406,
+  "srcH": 191,
+  "piv": [
+   0.1,
+   0.537
+  ],
+  "tip": [
+   0.98,
+   0.369
+  ]
+ },
+ "car-wagon-a": {
+  "file": "car-wagon-a.webp",
+  "srcW": 307,
+  "srcH": 461
+ },
+ "car-wagon-b": {
+  "file": "car-wagon-b.webp",
+  "srcW": 308,
+  "srcH": 463
+ },
+ "car-wagon-c": {
+  "file": "car-wagon-c.webp",
+  "srcW": 319,
+  "srcH": 463
+ },
+ "w-sign-green": {
+  "file": "w-sign-green.webp",
+  "srcW": 175,
+  "srcH": 228
+ },
+ "w-sign-red": {
+  "file": "w-sign-red.webp",
+  "srcW": 177,
+  "srcH": 226
+ },
+ "w-sign-yellow": {
+  "file": "w-sign-yellow.webp",
+  "srcW": 176,
+  "srcH": 228
+ },
+ "w-sign-purple": {
+  "file": "w-sign-purple.webp",
+  "srcW": 183,
+  "srcH": 225
+ },
+ "w-lever": {
+  "file": "w-lever.webp",
+  "srcW": 238,
+  "srcH": 220
+ },
+ "w-gate": {
+  "file": "w-gate.webp",
+  "srcW": 515,
+  "srcH": 195
+ },
+ "w-track": {
+  "file": "w-track.webp",
+  "srcW": 1112,
+  "srcH": 193
+ },
+ "w-flags": {
+  "file": "w-flags.webp",
+  "srcW": 516,
+  "srcH": 233
+ },
+ "w-station": {
+  "file": "w-station.webp",
+  "srcW": 471,
+  "srcH": 377
+ },
+ "fx-muzzle-orange": {
+  "file": "fx-muzzle-orange.webp",
+  "srcW": 256,
+  "srcH": 226
+ },
+ "fx-muzzle-yellow": {
+  "file": "fx-muzzle-yellow.webp",
+  "srcW": 273,
+  "srcH": 240
+ },
+ "fx-muzzle-teal": {
+  "file": "fx-muzzle-teal.webp",
+  "srcW": 259,
+  "srcH": 229
+ },
+ "fx-muzzle-ice": {
+  "file": "fx-muzzle-ice.webp",
+  "srcW": 292,
+  "srcH": 249
+ },
+ "fx-tracer-orange": {
+  "file": "fx-tracer-orange.webp",
+  "srcW": 275,
+  "srcH": 106
+ },
+ "fx-pellet-yellow": {
+  "file": "fx-pellet-yellow.webp",
+  "srcW": 168,
+  "srcH": 83
+ },
+ "fx-beam-purple": {
+  "file": "fx-beam-purple.webp",
+  "srcW": 304,
+  "srcH": 79
+ },
+ "fx-bolt-teal": {
+  "file": "fx-bolt-teal.webp",
+  "srcW": 300,
+  "srcH": 105
+ },
+ "fx-star-purple": {
+  "file": "fx-star-purple.webp",
+  "srcW": 171,
+  "srcH": 166
+ },
+ "fx-star-teal": {
+  "file": "fx-star-teal.webp",
+  "srcW": 163,
+  "srcH": 165
+ },
+ "fx-star-gold": {
+  "file": "fx-star-gold.webp",
+  "srcW": 176,
+  "srcH": 178
+ },
+ "fx-hit": {
+  "file": "fx-hit.webp",
+  "srcW": 231,
+  "srcH": 205
+ },
+ "fx-flame-green": {
+  "file": "fx-flame-green.webp",
+  "srcW": 293,
+  "srcH": 197
+ },
+ "fx-flame-orange": {
+  "file": "fx-flame-orange.webp",
+  "srcW": 293,
+  "srcH": 202
+ },
+ "fx-fireball": {
+  "file": "fx-fireball.webp",
+  "srcW": 305,
+  "srcH": 280
+ },
+ "fx-shard": {
+  "file": "fx-shard.webp",
+  "srcW": 277,
+  "srcH": 201
+ },
+ "fx-ring-gold": {
+  "file": "fx-ring-gold.webp",
+  "srcW": 304,
+  "srcH": 316
+ },
+ "fx-ring-shock": {
+  "file": "fx-ring-shock.webp",
+  "srcW": 313,
+  "srcH": 316
+ },
+ "fx-ring-ice": {
+  "file": "fx-ring-ice.webp",
+  "srcW": 314,
+  "srcH": 320
+ },
+ "fx-chev-gold": {
+  "file": "fx-chev-gold.webp",
+  "srcW": 288,
+  "srcH": 238
+ },
+ "fx-flake": {
+  "file": "fx-flake.webp",
+  "srcW": 215,
+  "srcH": 225
+ },
+ "fx-ember": {
+  "file": "fx-ember.webp",
+  "srcW": 140,
+  "srcH": 161
+ },
+ "fx-headlight": {
+  "file": "fx-headlight.webp",
+  "srcW": 191,
+  "srcH": 314
+ },
+ "fx-halo": {
+  "file": "fx-halo.webp",
+  "srcW": 237,
+  "srcH": 231
+ },
+ "fx-rocket": {
+  "file": "fx-rocket.webp",
+  "srcW": 320,
+  "srcH": 150
+ },
+ "fx-casing": {
+  "file": "fx-casing.webp",
+  "srcW": 133,
+  "srcH": 118
+ },
+ "fx-smoke-white": {
+  "file": "fx-smoke-white.webp",
+  "srcW": 254,
+  "srcH": 229
+ },
+ "fx-smoke-dark": {
+  "file": "fx-smoke-dark.webp",
+  "srcW": 273,
+  "srcH": 245
+ },
+ "fx-scorch": {
+  "file": "fx-scorch.webp",
+  "srcW": 288,
+  "srcH": 170
+ },
+ "fx-iceblock": {
+  "file": "fx-iceblock.webp",
+  "srcW": 261,
+  "srcH": 267
+ },
+ "fx-snow-splash": {
+  "file": "fx-snow-splash.webp",
+  "srcW": 274,
+  "srcH": 255
+ },
+ "fx-debris": {
+  "file": "fx-debris.webp",
+  "srcW": 237,
+  "srcH": 218
+ },
+ "w-track-v": {
+  "file": "w-track-v.webp",
+  "srcW": 206,
+  "srcH": 964
+ },
+ "fx-rays": {
+  "file": "fx-rays.webp",
+  "srcW": 587,
+  "srcH": 596
+ },
+ "fx-sparkle": {
+  "file": "fx-sparkle.webp",
+  "srcW": 159,
+  "srcH": 168
+ },
+ "ground": {
+  "file": "ground.webp",
+  "srcW": 1024,
+  "srcH": 1024
+ },
+ "cf-orange": {
+  "file": "cf-orange.webp",
+  "srcW": 170,
+  "srcH": 308
+ },
+ "cf-blue": {
+  "file": "cf-blue.webp",
+  "srcW": 172,
+  "srcH": 308
+ },
+ "cf-yellow": {
+  "file": "cf-yellow.webp",
+  "srcW": 174,
+  "srcH": 308
+ },
+ "cf-pink": {
+  "file": "cf-pink.webp",
+  "srcW": 148,
+  "srcH": 194
+ },
+ "cf-green": {
+  "file": "cf-green.webp",
+  "srcW": 148,
+  "srcH": 196
+ },
+ "cf-purple": {
+  "file": "cf-purple.webp",
+  "srcW": 151,
+  "srcH": 205
+ },
+ "cf-red": {
+  "file": "cf-red.webp",
+  "srcW": 177,
+  "srcH": 319
+ },
+ "cf-star": {
+  "file": "cf-star.webp",
+  "srcW": 196,
+  "srcH": 195
+ },
+ "fx-goo-1": {
+  "file": "fx-goo-1.webp",
+  "srcW": 295,
+  "srcH": 260
+ },
+ "fx-goo-2": {
+  "file": "fx-goo-2.webp",
+  "srcW": 325,
+  "srcH": 246
+ },
+ "fx-goo-drop": {
+  "file": "fx-goo-drop.webp",
+  "srcW": 273,
+  "srcH": 147
+ },
+ "fx-goo-drop-2": {
+  "file": "fx-goo-drop-2.webp",
+  "srcW": 116,
+  "srcH": 137
+ },
+ "fx-snow-clump": {
+  "file": "fx-snow-clump.webp",
+  "srcW": 277,
+  "srcH": 202
+ },
+ "fx-snow-bit": {
+  "file": "fx-snow-bit.webp",
+  "srcW": 159,
+  "srcH": 139
+ },
+ "fx-wood-chip": {
+  "file": "fx-wood-chip.webp",
+  "srcW": 230,
+  "srcH": 192
+ },
+ "fx-wood-chunk": {
+  "file": "fx-wood-chunk.webp",
+  "srcW": 202,
+  "srcH": 168
+ },
+ "crew-saw-f": {
+  "file": "crew-saw-f.webp",
+  "srcW": 216,
+  "srcH": 294
+ },
+ "crew-saw-s": {
+  "file": "crew-saw-s.webp",
+  "srcW": 195,
+  "srcH": 294
+ },
+ "crew-saw-b": {
+  "file": "crew-saw-b.webp",
+  "srcW": 211,
+  "srcH": 294
+ },
+ "crew-saw-arm": {
+  "file": "crew-saw-arm.webp",
+  "srcW": 441,
+  "srcH": 189,
+  "piv": [
+   0.1,
+   0.536
+  ],
+  "tip": [
+   0.97,
+   0.464
+  ]
+ },
+ "crew-mortar-f": {
+  "file": "crew-mortar-f.webp",
+  "srcW": 214,
+  "srcH": 257
+ },
+ "crew-mortar-s": {
+  "file": "crew-mortar-s.webp",
+  "srcW": 198,
+  "srcH": 257
+ },
+ "crew-mortar-b": {
+  "file": "crew-mortar-b.webp",
+  "srcW": 209,
+  "srcH": 256
+ },
+ "crew-mortar-arm": {
+  "file": "crew-mortar-arm.webp",
+  "srcW": 436,
+  "srcH": 229,
+  "piv": [
+   0.1,
+   0.538
+  ],
+  "tip": [
+   0.97,
+   0.415
+  ]
+ },
+ "crew-laser-f": {
+  "file": "crew-laser-f.webp",
+  "srcW": 250,
+  "srcH": 276
+ },
+ "crew-laser-s": {
+  "file": "crew-laser-s.webp",
+  "srcW": 206,
+  "srcH": 274
+ },
+ "crew-laser-b": {
+  "file": "crew-laser-b.webp",
+  "srcW": 228,
+  "srcH": 277
+ },
+ "crew-laser-arm": {
+  "file": "crew-laser-arm.webp",
+  "srcW": 446,
+  "srcH": 171,
+  "piv": [
+   0.1,
+   0.454
+  ],
+  "tip": [
+   0.97,
+   0.436
+  ]
+ },
+ "crew-harpoon-f": {
+  "file": "crew-harpoon-f.webp",
+  "srcW": 214,
+  "srcH": 274
+ },
+ "crew-harpoon-s": {
+  "file": "crew-harpoon-s.webp",
+  "srcW": 207,
+  "srcH": 271
+ },
+ "crew-harpoon-b": {
+  "file": "crew-harpoon-b.webp",
+  "srcW": 213,
+  "srcH": 271
+ },
+ "crew-harpoon-arm": {
+  "file": "crew-harpoon-arm.webp",
+  "srcW": 478,
+  "srcH": 163,
+  "piv": [
+   0.1,
+   0.452
+  ],
+  "tip": [
+   0.97,
+   0.31
+  ]
+ },
+ "fx-laser": {
+  "file": "fx-laser.webp",
+  "srcW": 337,
+  "srcH": 113
+ },
+ "fx-laser-hit": {
+  "file": "fx-laser-hit.webp",
+  "srcW": 255,
+  "srcH": 268
+ },
+ "fx-muzzle-pink": {
+  "file": "fx-muzzle-pink.webp",
+  "srcW": 286,
+  "srcH": 235
+ },
+ "fx-sparks": {
+  "file": "fx-sparks.webp",
+  "srcW": 297,
+  "srcH": 278
+ },
+ "fx-blast": {
+  "file": "fx-blast.webp",
+  "srcW": 338,
+  "srcH": 311
+ },
+ "fx-fuse": {
+  "file": "fx-fuse.webp",
+  "srcW": 263,
+  "srcH": 92
+ },
+ "fx-flash": {
+  "file": "fx-flash.webp",
+  "srcW": 279,
+  "srcH": 140
+ },
+ "fx-star-big": {
+  "file": "fx-star-big.webp",
+  "srcW": 285,
+  "srcH": 276
+ },
+ "fx-saw": {
+  "file": "fx-saw.webp",
+  "srcW": 258,
+  "srcH": 261
+ },
+ "fx-bomb": {
+  "file": "fx-bomb.webp",
+  "srcW": 239,
+  "srcH": 190
+ },
+ "fx-harpoon": {
+  "file": "fx-harpoon.webp",
+  "srcW": 306,
+  "srcH": 101
+ },
+ "fx-rope": {
+  "file": "fx-rope.webp",
+  "srcW": 276,
+  "srcH": 40
+ },
+ "fx-crater": {
+  "file": "fx-crater.webp",
+  "srcW": 272,
+  "srcH": 253
+ },
+ "fx-scorch-line": {
+  "file": "fx-scorch-line.webp",
+  "srcW": 311,
+  "srcH": 114
+ },
+ "fx-puff": {
+  "file": "fx-puff.webp",
+  "srcW": 294,
+  "srcH": 263
+ },
+ "fx-shrapnel": {
+  "file": "fx-shrapnel.webp",
+  "srcW": 230,
+  "srcH": 209
+ },
+ "car-wagon2": {
+  "file": "car-wagon2.webp",
+  "srcW": 351,
+  "srcH": 633
+ },
+ "car-wagon-1": {
+  "file": "car-wagon-1.webp",
+  "srcW": 376,
+  "srcH": 804
+ },
+ "car-wagon-2": {
+  "file": "car-wagon-2.webp",
+  "srcW": 376,
+  "srcH": 804
+ },
+ "car-wagon-3": {
+  "file": "car-wagon-3.webp",
+  "srcW": 381,
+  "srcH": 830
+ },
+ "z-yeti-head-f": {
+  "file": "z-yeti-head-f.webp",
+  "srcW": 368,
+  "srcH": 527
+ },
+ "z-yeti-roar-f": {
+  "file": "z-yeti-roar-f.webp",
+  "srcW": 364,
+  "srcH": 527
+ },
+ "z-yeti-torso-f": {
+  "file": "z-yeti-torso-f.webp",
+  "srcW": 387,
+  "srcH": 421
+ },
+ "z-yeti-arm-l": {
+  "file": "z-yeti-arm-l.webp",
+  "srcW": 265,
+  "srcH": 555
+ },
+ "z-yeti-arm-r": {
+  "file": "z-yeti-arm-r.webp",
+  "srcW": 258,
+  "srcH": 556
+ },
+ "z-yeti-leg-f": {
+  "file": "z-yeti-leg-f.webp",
+  "srcW": 279,
+  "srcH": 469
+ },
+ "z-yeti-head-s": {
+  "file": "z-yeti-head-s.webp",
+  "srcW": 349,
+  "srcH": 453
+ },
+ "z-yeti-roar-s": {
+  "file": "z-yeti-roar-s.webp",
+  "srcW": 349,
+  "srcH": 455
+ },
+ "z-yeti-torso-s": {
+  "file": "z-yeti-torso-s.webp",
+  "srcW": 400,
+  "srcH": 490
+ },
+ "z-yeti-head-b": {
+  "file": "z-yeti-head-b.webp",
+  "srcW": 334,
+  "srcH": 432
+ },
+ "z-yeti-torso-b": {
+  "file": "z-yeti-torso-b.webp",
+  "srcW": 387,
+  "srcH": 433
+ },
+ "z-yeti-leg-s": {
+  "file": "z-yeti-leg-s.webp",
+  "srcW": 305,
+  "srcH": 373
  }
 }
