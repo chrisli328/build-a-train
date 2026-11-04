@@ -1,8 +1,8 @@
 // Screens and flow: loading, the depot lobby (train idling in the yard), crew and
 // train upgrade pages, the run with its HUD, level-up cards, routes and results.
 import { loadArt, art } from './art.27597f9460.js';
-import { Run } from './run.6f1d7aa597.js';
-import { CREW, ROUTES, STAGE } from './data.6a0c6c4d8b.js';
+import { Run } from './run.bd9bffc651.js';
+import { CREW, ROUTES, STAGE } from './data.086f335293.js';
 import { save, persist, tickFuel, MAX_FUEL, FUEL_COST, FUEL_MS, today, fmt, upCost } from './save.ce36348db2.js';
 import { sfx, buzz, unlockAudio, applySettings, duckMusic } from './audio.a7f44784ac.js';
 import { $, $$, el, tap, ICON, UI, POR, openModal, closeAllModals, toast, flyIcons, rectIn, bump, confetti, countUp, fakeAd, curtain, wait, cq } from './ui.ddb8ef444b.js';
@@ -497,7 +497,8 @@ function showRoutes(j) {
   j.opts.forEach((key, i) => {
     const r = ROUTES[key], b = $(i ? '.route.r' : '.route.l', box);
     b.style.setProperty('--c', r.color);
-    b.innerHTML = `<img class="face" src="${UI('ui-sign-' + r.sign)}" alt=""><span class="body"><img src="${UI(r.ui)}" alt=""><span class="txt"><b class="t">${r.title}</b><small class="t t-thin">${r.sub}</small></span></span>`;
+    // board only (no post), the effect in big text, and a flashing outline behind it
+    b.innerHTML = `<img class="glow" src="${UI('ui-sign-' + r.sign + '-glow')}" alt=""><img class="face" src="${UI('ui-sign-' + r.sign + '-board')}" alt=""><span class="body"><img src="${UI(r.ui)}" alt=""><span class="txt"><b class="t">${r.short}</b></span></span>`;
   });
   box.classList.remove('hidden');
   bump(box, 'in');

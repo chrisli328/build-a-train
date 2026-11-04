@@ -25,11 +25,11 @@
   --board-w: 70cqw; --board-top: 0cqw; --board-tx: 9%; --board-ty: 42%; --board-tb: 15%;
   --beacon-w: 17cqw; --beacon-y: 2.8cqw; --beacon-l: 12%; --beacon-r: 88%;
   --chain-top: 20.4cqw; --chain-w: 2.6cqw; --chain-h: 10.6cqw; --clock-top: 27cqw; --ring-in: 6%;
-  /* route sign 386x262: arrow tip on the left, face between the stripes */
-  --sign-ty: 9.5%; --sign-th: 38%; --sign-tip: 15%; --sign-end: 6%;
+  /* route sign board 418x194 (post cut off, 16px room for the outline): arrow tip on the left, face between the stripes */
+  --sign-ty: 25%; --sign-th: 52%; --sign-tip: 15%; --sign-end: 8%;
   /* level-up: title plate 512x146 has snow on top; card 335x550 tab 1-12%, ring centre 40.5%, divider 75% */
   --title-ty: 30%; --title-tb: 8%;
-  --card-ar: 0.6327; --tag-y: 1%; --tag-h: 11%; --ring-x: 14%; --ring-d: 71%; --ring-y: 17.2%; --title-y: 74%; --desc-y: 83.6%;
+  --card-ar: 0.5854; --tag-y: .93%; --tag-h: 10.2%; --ring-x: 14%; --ring-d: 71%; --ring-y: 15.9%; --title-y: 68.6%; --desc-y: 79.4%;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: #0d1430; touch-action: none; overscroll-behavior: none; }
@@ -312,16 +312,17 @@ img { -webkit-user-drag: none; }
 #routes .clock.hurry .ring { filter: hue-rotate(-40deg) saturate(1.6); }
 @keyframes clockHurry { 50% { transform: scale(1.12); } }
 
-.route { position: absolute; top: var(--sign-top, 62cqh); width: 40cqw; background: none; padding: 0; }
-.route.l { left: 0; } .route.r { right: 0; } /* ends at 40cqw: the train starts at 39.5cqw, so the sign never covers it */
-.route .face { display: block; width: 100%; }
-.route.r .face { transform: scaleX(-1); }
+.route { position: absolute; top: var(--sign-top, 62cqh); width: 38cqw; background: none; padding: 0; }
+.route.l { left: 0; } .route.r { right: 0; } /* ends at 38cqw: the train starts at 39.5cqw, so the sign and its outline never cover it */
+.route .face { display: block; width: 100%; position: relative; }
+.route .glow { position: absolute; left: 0; top: 0; width: 100%; animation: signGlow .55s ease-in-out infinite alternate; }
+.route.r .face, .route.r .glow { transform: scaleX(-1); }
+@keyframes signGlow { from { opacity: .1; } to { opacity: 1; } }
 .route .body { position: absolute; top: var(--sign-ty, 18%); height: var(--sign-th, 34%); display: flex; align-items: center; gap: 1.4cqw; }
 .route.l .body { left: var(--sign-tip, 15%); right: var(--sign-end, 5%); } .route.r .body { left: var(--sign-end, 5%); right: var(--sign-tip, 15%); }
-.route .body > img { width: 6.2cqw; flex: none; }
+.route .body > img { width: 6.6cqw; flex: none; }
 .route .txt { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
-.route b { font-size: 4.3cqw; line-height: 1; white-space: nowrap; }
-.route small { font-size: 2.85cqw; line-height: .98; text-align: left; margin-top: .4cqw; -webkit-text-stroke-width: .05em; }
+.route b { font-size: 5.4cqw; line-height: .98; text-align: left; -webkit-text-stroke-width: .07em; }
 .route.l { animation: nudgeL 1s ease-in-out infinite; } .route.r { animation: nudgeR 1s ease-in-out infinite; }
 #routes.in .route.l { animation: routesIn .35s .1s cubic-bezier(.3,1.6,.5,1) both, nudgeL 1s .45s ease-in-out infinite; }
 #routes.in .route.r { animation: routesIn .35s .1s cubic-bezier(.3,1.6,.5,1) both, nudgeR 1s .45s ease-in-out infinite; }
@@ -334,6 +335,8 @@ img { -webkit-user-drag: none; }
 .od .base { filter: saturate(.55) brightness(.85); transition: filter .2s; }
 .od .ring { -webkit-mask: conic-gradient(#000 calc(var(--p) * 1turn), transparent 0); mask: conic-gradient(#000 calc(var(--p) * 1turn), transparent 0); }
 .od .lbl { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); --ph: 6.4cqw; font-size: 3.8cqw; white-space: nowrap; color: #dfe7ff; }
+/* one whole pill picture at this label's size: the stretched three-piece pill showed two seam lines here */
+.od .lbl { border: 0; border-image: none; width: 22.4cqw; justify-content: center; background: url(../img/ui/ui-pill-steam.webp) 0 0 / 100% 100% no-repeat; }
 .od.ready .base { filter: none; animation: odReady .7s ease-in-out infinite; }
 .od.ready .lbl { color: var(--yellow); }
 .od.active .base { filter: brightness(1.2) drop-shadow(0 0 2cqw #fff27e); animation: odReady .2s linear infinite; }
@@ -364,8 +367,8 @@ img { -webkit-user-drag: none; }
 .kard .tag { position: absolute; left: 0; right: 0; top: var(--tag-y, 1%); height: var(--tag-h, 8%); display: flex; align-items: center; justify-content: center; font-size: 4.6cqw; color: color-mix(in srgb, var(--c) 28%, #071022); -webkit-text-stroke: 0; text-shadow: 0 .25cqw 0 rgba(255,255,255,.4); }
 .kard .art { position: absolute; left: var(--ring-x, 14%); width: var(--ring-d, 72%); top: var(--ring-y, 13%); aspect-ratio: 1; border-radius: 50%; overflow: hidden; display: block; }
 .kard .art img { width: 100%; height: 100%; display: block; }
-.kard b { position: absolute; left: 4%; right: 4%; top: var(--title-y, 60%); font-size: 5.2cqw; line-height: 1; text-align: center; white-space: nowrap; }
-.kard small { position: absolute; left: 6%; right: 6%; top: var(--desc-y, 76%); font-size: 3.3cqw; line-height: 1.08; text-align: center; color: #fff; }
+.kard b { position: absolute; left: 4%; right: 4%; top: var(--title-y, 60%); font-size: 4.8cqw; line-height: 1; text-align: center; white-space: nowrap; }
+.kard small { position: absolute; left: 5%; right: 5%; top: var(--desc-y, 76%); font-size: 3.15cqw; line-height: 1.14; text-align: center; color: #fff; }
 .kard .lvtag { position: absolute; top: 9%; right: -1.2cqw; font-size: 3.4cqw; padding: .1cqw 1.6cqw; color: #3a1d05; -webkit-text-stroke: 0; background: url(../img/ui/ui-btn-orange.webp) center / 100% 100%; transform: rotate(8deg); z-index: 1; }
 .kard .rare { position: absolute; bottom: -2cqw; right: -1.4cqw; font-size: 4cqw; padding: .2cqw 2cqw; background: url(../img/ui/ui-btn-blue.webp) center / 100% 100%; transform: rotate(-8deg); }
 .kard.picked { animation: kardPick .38s cubic-bezier(.3,1.6,.5,1) both; z-index: 2; }

@@ -20,11 +20,13 @@ export const ZOMBIES = {
   walker:  { hp: 20,   speed: 34, r: 12, dps: 6,  xp: 1, coin: 0.10, sprite: 'z-walker', scale: 1 },
   hardhat: { hp: 42,   speed: 31, r: 12, dps: 7,  xp: 2, coin: 0.14, sprite: 'z-hardhat', scale: 1.02 },
   pot:     { hp: 70,   speed: 28, r: 13, dps: 8,  xp: 2, coin: 0.16, sprite: 'z-pot', scale: 1.04 },
-  runner:  { hp: 14,   speed: 74, r: 10, dps: 5,  xp: 1, coin: 0.10, sprite: 'z-runner', scale: 0.8 },
+  runner:  { hp: 14,   speed: 74, r: 10, dps: 5,  xp: 1, coin: 0.10, sprite: 'z-runner', scale: 0.8,
+             // comes in packs, weaves while it sprints, then crouches and pounces onto a wagon from close range
+             pack: [2, 4], weave: 0.85, pounce: { r: 92, crouch: 0.3, T: 0.42, H: 34, bite: 6 } },
   bloater: { hp: 45,   speed: 24, r: 16, dps: 4,  xp: 3, coin: 0.25, sprite: 'z-bloater', scale: 1.12, boom: { r: 78, dmg: 45 } },
   brute:   { hp: 400,  speed: 22, r: 22, dps: 22, xp: 12, coin: 1, sprite: 'z-brute', heavy: true, scale: 1.32 },
   shield:  { hp: 105,  speed: 26, r: 14, dps: 7,  xp: 3, coin: 0.2, sprite: 'z-shield', heavy: true, scale: 1.1 },
-  yeti:    { hp: 4600, speed: 20, r: 48, dps: 0,  xp: 0, coin: 0, sprite: 'z-yeti', heavy: true, boss: true, scale: 1 },
+  yeti:    { hp: 10350, speed: 20, r: 62, dps: 0,  xp: 0, coin: 0, sprite: 'z-yeti', heavy: true, boss: true, scale: 1 },
 };
 
 // Level-up cards. kind: crew (new crew member), up (upgrade), train (train-wide).
@@ -49,12 +51,12 @@ export const CARDS = [
   { id: 'u-crit',    kind: 'up', title: 'Lucky Shots',   text: '+15% chance\nof critical hits', icon: 'crown', art: 'ca-crit' },
 ];
 
-// Junction options. Each shows on a sign beside its branch.
+// Junction options. Each shows on a sign beside its branch; the sign reads only the short effect.
 export const ROUTES = {
-  repair: { title: 'REPAIR YARD', sub: '+40% train HP', icon: 'wrench', color: '#3ccf4e', sign: 'green', ui: 'i-wrench' },
-  supply: { title: 'SUPPLY DUMP', sub: 'Crates full of coins', icon: 'chest-wood', color: '#ffb21c', sign: 'yellow', ui: 'i-chest' },
-  horde:  { title: 'HORDE ROAD', sub: 'Double XP, more zombies', icon: 'skull', color: '#ff4058', sign: 'red', ui: 'i-skull' },
-  armory: { title: 'ARMORY', sub: 'Free rare card', icon: 'chest-gold', color: '#9b5cf6', sign: 'purple', ui: 'i-star' },
+  repair: { title: 'REPAIR YARD', sub: '+40% train HP', short: '+40% HP', icon: 'wrench', color: '#3ccf4e', sign: 'green', ui: 'i-wrench' },
+  supply: { title: 'SUPPLY DUMP', sub: 'Crates full of coins', short: '+Coins', icon: 'chest-wood', color: '#ffb21c', sign: 'yellow', ui: 'i-chest' },
+  horde:  { title: 'HORDE ROAD', sub: 'Double XP, more zombies', short: 'x2 XP', icon: 'skull', color: '#ff4058', sign: 'red', ui: 'i-skull' },
+  armory: { title: 'ARMORY', sub: 'Free rare card', short: 'Rare card', icon: 'chest-gold', color: '#9b5cf6', sign: 'purple', ui: 'i-star' },
 };
 
 // One stage = three legs. Distances are in world units along the track.
@@ -74,9 +76,9 @@ export const STAGE = {
   ],
   // spawn mix per leg: [type, weight]
   legs: [
-    { to: 1450, rate: [1.2, 3.6], mix: [['walker', 8], ['runner', 3], ['hardhat', 2]] },
-    { to: 2900, rate: [2.6, 4.6], mix: [['walker', 6], ['runner', 3], ['hardhat', 3], ['pot', 2], ['bloater', 1.5], ['shield', 0.8]] },
-    { to: 4300, rate: [3.6, 6.0], mix: [['walker', 5], ['runner', 4], ['hardhat', 3], ['pot', 3], ['bloater', 2], ['shield', 1.4]] },
+    { to: 1450, rate: [1.2, 3.6], mix: [['walker', 8], ['runner', 1.1], ['hardhat', 2]] },
+    { to: 2900, rate: [2.6, 4.6], mix: [['walker', 6], ['runner', 1.1], ['hardhat', 3], ['pot', 2], ['bloater', 1.5], ['shield', 0.8]] },
+    { to: 4300, rate: [3.6, 6.0], mix: [['walker', 5], ['runner', 1.5], ['hardhat', 3], ['pot', 3], ['bloater', 2], ['shield', 1.4]] },
   ],
   // scripted moments: a horde from the front, an ambush from one side, mini-bosses
   events: [

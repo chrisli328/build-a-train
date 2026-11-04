@@ -61,7 +61,9 @@ export class Fx {
   clear() { this.p.length = 0; this.n.length = 0; this.d.length = 0; this.lines.length = 0; this.trauma = 0; }
 
   add(o) { if (this.p.length >= MAXP) this.p.splice(0, 40); o.t = 0; this.p.push(o); return o; }
-  shake(a) { this.trauma = Math.min(1, this.trauma + a); }
+  // cap: the most this kind of hit can build the shake up to. Gun and kill shakes stop low so a busy late level
+  // stays readable; only the big moments (a wagon lost, the boss slam, game over) shake all the way
+  shake(a, cap = 1) { if (this.trauma < cap) this.trauma = Math.min(cap, this.trauma + a); }
   // the camera turned with the line by da, so the ground (and everything left on it) turns the other way round the view
   turn(c, s, da) {
     const R = (o, X, Y) => { const x = o[X], y = o[Y]; if (typeof x !== 'number' || typeof y !== 'number') return; o[X] = x * c + y * s; o[Y] = -x * s + y * c; };
@@ -83,8 +85,9 @@ export class Fx {
   bolt(pts, color = '#bff8ff', life = 0.14, glow) { this.lines.push({ k: 'bolt', pts, color, life, t: 0, glow }); }
   // four-point sparkle for hits (sniper, engineer, gunner)
   star(x, y, r, color = '#ffffff', life = 0.22) { return this.add({ k: 'star', x, y, r, color, life, rot: rand(0, 0.8) }); }
-  // one generated effect sprite: muzzle flashes, hit bursts, splashes
-  spr(x, y, name, size, o = {}) { return this.add({ k: 'spr', x, y, name, size, rot: o.rot || 0, vr: o.vr || 0, vx: o.vx || 0, vy: o.vy || 0, drag: o.drag ?? 0, life: o.life || 0.12, grow: o.grow ?? 1.15, ax: o.ax ?? 0.5, sy: o.sy || 1, img: o.img }); }
+  // one generated effect sprite: muzzle flashes, hit bursts, splashes; o.at: () => ({ x, y, rot }) keeps it on
+  // something that moves (a muzzle flash on the gun tip)
+  spr(x, y, name, size, o = {}) { return this.add({ k: 'spr', x, y, name, size, rot: o.rot || 0, vr: o.vr || 0, vx: o.vx || 0, vy: o.vy || 0, drag: o.drag ?? 0, life: o.life || 0.12, grow: o.grow ?? 1.15, ax: o.ax ?? 0.5, sy: o.sy || 1, img: o.img, at: o.at }); }
   // gold chevron that floats up over a crew member the captain is boosting
   chev(x, y, color = '#ffd23f') { return this.add({ k: 'chev', x, y, vx: 0, vy: -26, color, life: 0.7 }); }
 
@@ -121,6 +124,8 @@ export class Fx {
     const blobs = [];
     const n = kind === 'goo' ? 5 : kind === 'burn' ? 4 : 3;
     for (let i = 0; i < n; i++) blobs.push([rand(-0.6, 0.6) * r, rand(-0.4, 0.4) * r, r * rand(0.35, 0.7)]);
+    // round marks get a random turn kept in rot, so they turn with the ground when the camera turns
+    if (rot === undefined && kind !== 'laser') rot = rand(0, Math.PI * 2);
     this.d.push({ x, y, r, kind, blobs, rot, t: 0, life: kind === 'goo' ? 7 : kind === 'burn' ? 3.5 : kind === 'laser' ? 2.4 : kind === 'glow' ? 0.28 : 9, seed: Math.random() * 10 });
   }
 
@@ -154,28 +159,30 @@ export class Fx {
         if (art['fx-flash']) { g.globalAlpha = 1 - o.t / o.life; fxs(g, 'fx-flash', o.x, o.y, o.r * 2 * (1 + o.t * 1.2), { h: o.r * (1 + o.t * 1.2) }); }
         continue;
       }
-      if (o.kind === 'crater' && art['fx-crater']) {
+      // ground marks are seen from straight above with no outline (like the rails): square sprites, never squashed
+      if (o.kind === 'crater' && art['fx-crater-td-1']) {
         g.globalAlpha = Math.min(1, (o.life - o.t) / 1.5);
-        fxs(g, 'fx-crater', o.x, o.y, o.r * 2.6, { rot: (o.seed % 1) * 6.3, h: o.r * 2.0 });
+        fxs(g, `fx-crater-td-${1 + (Math.floor(o.seed) % 2)}`, o.x, o.y, o.r * 2.6, { rot: o.rot, h: o.r * 2.6 });
         continue;
       }
-      if (o.kind === 'laser' && art['fx-scorch-line']) {
+      if (o.kind === 'laser' && art['fx-scorchline-td']) {
         // glowing melt line that cools down
         const k = o.t / o.life;
         g.globalAlpha = Math.min(1, (o.life - o.t) / 0.8) * 0.9;
-        fxs(g, 'fx-scorch-line', o.x, o.y, o.r * 3, { rot: o.rot || 0 });
+        fxs(g, 'fx-scorchline-td', o.x, o.y, o.r * 3, { rot: o.rot || 0 });
         if (k < 0.35 && art['fx-ember']) { g.globalAlpha = (0.35 - k) * 2; fxs(g, 'fx-ember', o.x, o.y, o.r * 1.3); }
         continue;
       }
-      if (o.kind !== 'goo' && art['fx-scorch']) {
+      if (o.kind !== 'goo' && art['fx-scorch-td-1']) {
         g.globalAlpha = Math.min(1, (o.life - o.t) / 1.2) * (o.kind === 'burn' ? 0.95 : 0.75);
-        fxs(g, 'fx-scorch', o.x, o.y, o.r * 2.6, { rot: (o.seed % 1) * 0.6 - 0.3 });
+        fxs(g, `fx-scorch-td-${1 + (Math.floor(o.seed) % 4)}`, o.x, o.y, o.r * 2.6, { rot: o.rot, h: o.r * 2.6 });
         if (o.kind === 'burn' && art['fx-ember']) for (let i = 0; i < 2; i++) { const [bx, by] = o.blobs[i], fl = 0.5 + 0.5 * Math.sin(this.time * 9 + o.seed + i * 2); fxs(g, 'fx-ember', o.x + bx * 0.6, o.y + by * 0.6, o.r * (0.7 + fl * 0.5)); }
         continue;
       }
-      if (o.kind === 'goo' && art['fx-goo-1']) {
+      // goo splats: one even green with a lighter wet middle, no darker rim, so any random turn still looks flat on the ground
+      if (o.kind === 'goo' && art['fx-goo-td-1']) {
         g.globalAlpha = Math.min(1, (o.life - o.t) / 1.5) * 0.9;
-        fxs(g, o.seed > 5 ? 'fx-goo-2' : 'fx-goo-1', o.x, o.y, o.r * 2.4, { rot: (o.seed % 1) * 6.3 });
+        fxs(g, `fx-goo-td-${1 + Math.floor(o.seed * 0.8)}`, o.x, o.y, o.r * 2.5, { rot: o.rot, h: o.r * 2.5 });
         continue;
       }
       const a = Math.min(1, (o.life - o.t) / 1.5) * (o.kind === 'goo' ? 0.85 : 0.5);
@@ -229,6 +236,7 @@ export class Fx {
       const k = o.t / o.life;
       switch (o.k) {
         case 'spr': {
+          if (o.at) { const q = o.at(); o.x = q.x; o.y = q.y; o.rot = q.rot; }
           const e = 1 + (o.grow - 1) * k, w = o.size * e;
           fxs(g, o.name, o.x, o.y, w, { rot: o.rot, alpha: k < 0.6 ? 1 : (1 - k) / 0.4, ax: o.ax, img: o.img, h: o.sy !== 1 && (o.img || art[o.name]) ? w * (o.img || art[o.name]).h / (o.img || art[o.name]).w * o.sy : undefined });
           break;
