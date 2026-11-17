@@ -7,5 +7,5 @@ pick the track at each fork, choose 1 of 3 upgrades as you level, and beat the b
 - Every UI screen and popup: https://chrisli328.github.io/build-a-train/ui/
 - The original HTML prototype (frozen 2026-11-17): https://chrisli328.github.io/build-a-train/html/
 
-Best on a phone held upright. Store prices and ads are placeholders. The Unity build is commit f3932d8 (2026-11-18) of
+Best on a phone held upright. Store prices and ads are placeholders. The Unity build is commit f9ac3c2 (2026-11-18) of
 the game repository; this site is rebuilt from it with Tools/publish-web/publish.sh, do not edit it by hand.

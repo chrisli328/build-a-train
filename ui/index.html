@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Build A Train: every UI screen</title>
 <style>
-  :root { --ink: #16204a; --bg: #eef3fb; --card: #fff; --muted: #5d6a8f; --accent: #e8680c; --line: #d3dcef; }
+  :root { color-scheme: dark; --ink: #e8e8ea; --bg: #15171c; --card: #1d2027; --muted: #a3a8b4; --accent: #f28a3c; --line: #2e333d; }
   * { box-sizing: border-box; }
   body { margin: 0; font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); background: var(--bg); }
   header { padding: 28px 20px 12px; max-width: 1400px; margin: 0 auto; }
@@ -13,32 +13,32 @@
   .lead { margin: 0 0 6px; max-width: 760px; }
   .meta { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
   .links { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
-  .btn { display: inline-block; padding: 9px 16px; border-radius: 10px; background: var(--accent); color: #fff; text-decoration: none; font-weight: 600; }
+  .btn { display: inline-block; padding: 9px 16px; border-radius: 10px; background: #e8680c; color: #fff; text-decoration: none; font-weight: 600; }
   .btn.ghost { background: transparent; color: var(--accent); border: 2px solid var(--accent); }
-  .bar { position: sticky; top: 0; z-index: 5; background: rgba(238,243,251,.95); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+  .bar { position: sticky; top: 0; z-index: 5; background: rgba(21,23,28,.95); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
   .bar nav { max-width: 1400px; margin: 0 auto; padding: 10px 20px; display: flex; flex-wrap: wrap; gap: 6px; }
-  .bar nav a { padding: 5px 11px; border-radius: 999px; background: #fff; color: var(--ink); text-decoration: none; font-size: 13px; border: 1px solid var(--line); }
+  .bar nav a { padding: 5px 11px; border-radius: 999px; background: var(--card); color: var(--ink); text-decoration: none; font-size: 13px; border: 1px solid var(--line); }
   main { max-width: 1400px; margin: 0 auto; padding: 0 20px 40px; }
   h2 { margin: 28px 0 12px; font-size: 20px; }
   section { scroll-margin-top: 60px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
-  .card { margin: 0; background: var(--card); border-radius: 14px; overflow: hidden; box-shadow: 0 2px 8px rgba(22,32,74,.08); display: flex; flex-direction: column; }
+  .card { margin: 0; background: var(--card); border-radius: 14px; overflow: hidden; border: 1px solid var(--line); display: flex; flex-direction: column; }
   .pic { display: block; background: #0d1430; }
   .pic img { display: block; width: 100%; aspect-ratio: 430 / 932; object-fit: contain; }
   figcaption { padding: 10px 12px 12px; }
   h3 { margin: 0 0 4px; font-size: 16px; display: flex; gap: 8px; align-items: baseline; }
-  .num { flex: none; min-width: 24px; padding: 0 6px; border-radius: 6px; background: #ffe8d6; color: var(--accent); font-size: 12px; text-align: center; }
+  .num { flex: none; min-width: 24px; padding: 0 6px; border-radius: 6px; background: #3a2414; color: var(--accent); font-size: 12px; text-align: center; }
   figcaption p { margin: 0 0 6px; }
   .dev { color: var(--muted); font-size: 12px; }
-  code { font: 12px ui-monospace, Menlo, monospace; background: #eef1f8; padding: 1px 4px; border-radius: 4px; }
-  .tablewrap { overflow-x: auto; background: var(--card); border-radius: 14px; box-shadow: 0 2px 8px rgba(22,32,74,.08); }
+  code { font: 12px ui-monospace, Menlo, monospace; background: #262a33; padding: 1px 4px; border-radius: 4px; }
+  .tablewrap { overflow-x: auto; background: var(--card); border-radius: 14px; border: 1px solid var(--line); }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
   th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
   th { font-size: 12px; color: var(--muted); font-weight: 600; }
   tr:last-child td { border-bottom: 0; }
   td.say { font-weight: 700; }
   .kind { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-  .kind.toast { background: #26304f; color: #fff; }
+  .kind.toast { background: #34406a; color: #fff; }
   .kind.banner { background: #ffb21f; color: #3a2200; }
   footer { max-width: 1400px; margin: 0 auto; padding: 0 20px 40px; color: var(--muted); font-size: 13px; }
   #view { position: fixed; inset: 0; z-index: 10; background: rgba(8,12,32,.92); display: none; align-items: center; justify-content: center; padding: 16px; cursor: zoom-out; }
@@ -57,7 +57,7 @@
 <header>
   <h1>Build A Train: every UI screen</h1>
   <p class="lead">Every screen and popup in the current Unity build, captured from the game itself at phone size (430 x 932). In a desktop browser the game shows the same phone screen inside a frame. Rebuild this page after any UI change with Tools/ui-pages/make.sh.</p>
-  <p class="meta">32 screens, from Unity project commit f3932d8 (2026-11-18). Page made 2026-11-18 05:35.</p>
+  <p class="meta">32 screens, from Unity project commit f9ac3c2 (2026-11-18). Page made 2026-11-18 06:04.</p>
   <div class="links"><a class="btn" href="../">Play the latest build</a><a class="btn ghost" href="../html/">Original HTML prototype</a></div>
 </header>
 <div class="bar"><nav><a href="#g0">Start and home</a><a href="#g1">Home popups</a><a href="#g2">In a run</a><a href="#g3">End of a run</a><a href="#messages">Toasts and banners</a></nav></div>
