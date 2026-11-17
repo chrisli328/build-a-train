@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build A Train: every UI screen</title>
+<style>
+  :root { --ink: #16204a; --bg: #eef3fb; --card: #fff; --muted: #5d6a8f; --accent: #e8680c; --line: #d3dcef; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); background: var(--bg); }
+  header { padding: 28px 20px 12px; max-width: 1400px; margin: 0 auto; }
+  h1 { margin: 0 0 6px; font-size: 26px; }
+  .lead { margin: 0 0 6px; max-width: 760px; }
+  .meta { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
+  .links { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+  .btn { display: inline-block; padding: 9px 16px; border-radius: 10px; background: var(--accent); color: #fff; text-decoration: none; font-weight: 600; }
+  .btn.ghost { background: transparent; color: var(--accent); border: 2px solid var(--accent); }
+  .bar { position: sticky; top: 0; z-index: 5; background: rgba(238,243,251,.95); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+  .bar nav { max-width: 1400px; margin: 0 auto; padding: 10px 20px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .bar nav a { padding: 5px 11px; border-radius: 999px; background: #fff; color: var(--ink); text-decoration: none; font-size: 13px; border: 1px solid var(--line); }
+  main { max-width: 1400px; margin: 0 auto; padding: 0 20px 40px; }
+  h2 { margin: 28px 0 12px; font-size: 20px; }
+  section { scroll-margin-top: 60px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+  .card { margin: 0; background: var(--card); border-radius: 14px; overflow: hidden; box-shadow: 0 2px 8px rgba(22,32,74,.08); display: flex; flex-direction: column; }
+  .pic { display: block; background: #0d1430; }
+  .pic img { display: block; width: 100%; aspect-ratio: 430 / 932; object-fit: contain; }
+  figcaption { padding: 10px 12px 12px; }
+  h3 { margin: 0 0 4px; font-size: 16px; display: flex; gap: 8px; align-items: baseline; }
+  .num { flex: none; min-width: 24px; padding: 0 6px; border-radius: 6px; background: #ffe8d6; color: var(--accent); font-size: 12px; text-align: center; }
+  figcaption p { margin: 0 0 6px; }
+  .dev { color: var(--muted); font-size: 12px; }
+  code { font: 12px ui-monospace, Menlo, monospace; background: #eef1f8; padding: 1px 4px; border-radius: 4px; }
+  .tablewrap { overflow-x: auto; background: var(--card); border-radius: 14px; box-shadow: 0 2px 8px rgba(22,32,74,.08); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; }
+  tr:last-child td { border-bottom: 0; }
+  td.say { font-weight: 700; }
+  .kind { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .kind.toast { background: #26304f; color: #fff; }
+  .kind.banner { background: #ffb21f; color: #3a2200; }
+  footer { max-width: 1400px; margin: 0 auto; padding: 0 20px 40px; color: var(--muted); font-size: 13px; }
+  #view { position: fixed; inset: 0; z-index: 10; background: rgba(8,12,32,.92); display: none; align-items: center; justify-content: center; padding: 16px; cursor: zoom-out; }
+  #view.on { display: flex; }
+  #view img { max-width: 100%; max-height: 100%; border-radius: 8px; }
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } .dev { display: none; }
+    .bar nav { flex-wrap: nowrap; overflow-x: auto; padding: 8px 12px; scrollbar-width: none; }
+    .bar nav a { white-space: nowrap; }
+    header { padding: 20px 14px 8px; } main { padding: 0 12px 32px; } h1 { font-size: 22px; }
+    th, td { padding: 7px 8px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Build A Train: every UI screen</h1>
+  <p class="lead">Every screen and popup in the current Unity build, captured from the game itself at phone size (430 x 932). In a desktop browser the game shows the same phone screen inside a frame. Rebuild this page after any UI change with Tools/ui-pages/make.sh.</p>
+  <p class="meta">32 screens, from Unity project commit b5f677a (2026-11-18) with local changes. Page made 2026-11-18 05:23.</p>
+  <div class="links"><a class="btn" href="../">Play the latest build</a><a class="btn ghost" href="../html/">Original HTML prototype</a></div>
+</header>
+<div class="bar"><nav><a href="#g0">Start and home</a><a href="#g1">Home popups</a><a href="#g2">In a run</a><a href="#g3">End of a run</a><a href="#messages">Toasts and banners</a></nav></div>
+<main>
+    <section id="g0">
+      <h2>Start and home</h2>
+      <div class="grid">
+      <figure class="card" id="00-loading">
+        <a class="pic" href="img/00-loading.webp"><img loading="lazy" src="img/00-loading.webp" alt="Loading"></a>
+        <figcaption>
+          <h3><span class="num">1</span>Loading</h3>
+          <p>Every start. The splash art, one tip line and the loading bar with the train running along it.</p>
+          <p class="dev">Capture <code>00-loading</code><br>Code <code>UI/Tree.cs BuildLoading</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="01-lobby">
+        <a class="pic" href="img/01-lobby.webp"><img loading="lazy" src="img/01-lobby.webp" alt="Home (first visit)"></a>
+        <figcaption>
+          <h3><span class="num">2</span>Home (first visit)</h3>
+          <p>Home on a new save, with the &#x27;Tap START to roll out!&#x27; toast shown before the first run. Top: fuel, coins, gems, settings. Chapter name with arrows. Sides: Depot, Daily, Pass, and Convoy (opens the Rails tab). The line-up of riders on the roof, START (costs 5 fuel), and the bottom tabs Shop, Crew, Battle, Train, Rails.</p>
+          <p class="dev">Capture <code>01-lobby</code><br>Code <code>UI/Lobby.cs ShowLobby, UI/Tree.cs BuildLobby</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="28-toast">
+        <a class="pic" href="img/28-toast.webp"><img loading="lazy" src="img/28-toast.webp" alt="Home with a toast"></a>
+        <figcaption>
+          <h3><span class="num">3</span>Home with a toast</h3>
+          <p>Tapping the chapter&#x27;s left arrow. Toasts are the short dark labels under the chapter name; the full list of them is at the end of this page.</p>
+          <p class="dev">Capture <code>28-toast</code><br>Code <code>UI/Lobby.cs BindLobby, UI/UiFx.cs Toast</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="19-back-lobby">
+        <a class="pic" href="img/19-back-lobby.webp"><img loading="lazy" src="img/19-back-lobby.webp" alt="Back home after a run"></a>
+        <figcaption>
+          <h3><span class="num">4</span>Back home after a run</h3>
+          <p>After Back to depot on Run Over (or Continue on Victory): home again, with the run&#x27;s coins flying into the coin counter and 5 fuel spent.</p>
+          <p class="dev">Capture <code>19-back-lobby</code><br>Code <code>UI/Lobby.cs ShowLobby, UI/Pages.cs Gain</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="02-crew">
+        <a class="pic" href="img/02-crew.webp"><img loading="lazy" src="img/02-crew.webp" alt="Crew tab"></a>
+        <figcaption>
+          <h3><span class="num">5</span>Crew tab</h3>
+          <p>Bottom bar, Crew. Every crew member: the ones you have show their level, the locked ones say &#x27;Find in runs&#x27;. Tap a card to open its popup.</p>
+          <p class="dev">Capture <code>02-crew</code><br>Code <code>UI/Pages.cs CrewPage</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="03-train">
+        <a class="pic" href="img/03-train.webp"><img loading="lazy" src="img/03-train.webp" alt="Train tab"></a>
+        <figcaption>
+          <h3><span class="num">6</span>Train tab</h3>
+          <p>Bottom bar, Train. Upgrades bought with coins: Wagons (more crew seats), Snow Plow (plow damage), Armor (train HP).</p>
+          <p class="dev">Capture <code>03-train</code><br>Code <code>UI/Pages.cs TrainPage</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="04-shop">
+        <a class="pic" href="img/04-shop.webp"><img loading="lazy" src="img/04-shop.webp" alt="Shop tab"></a>
+        <figcaption>
+          <h3><span class="num">7</span>Shop tab</h3>
+          <p>Bottom bar, Shop. A mock shop with placeholder prices. The money offer (Starter Crate) does nothing; the gem offers (Coin Sack, Fuel Can) and the Free Crate (an ad, 150 coins) work.</p>
+          <p class="dev">Capture <code>04-shop</code><br>Code <code>UI/Pages.cs ShopPage</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="05-rails">
+        <a class="pic" href="img/05-rails.webp"><img loading="lazy" src="img/05-rails.webp" alt="Rails tab (stage map)"></a>
+        <figcaption>
+          <h3><span class="num">8</span>Rails tab (stage map)</h3>
+          <p>Bottom bar, Rails. The chapter&#x27;s stations as a scrolling map, the Yeti King boss after station 6, and the star chests along the top bar. Tap the current station or PLAY to start a run.</p>
+          <p class="dev">Capture <code>05-rails</code><br>Code <code>UI/Pages.cs RailsPage</code></p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+    <section id="g1">
+      <h2>Home popups</h2>
+      <div class="grid">
+      <figure class="card" id="06-settings">
+        <a class="pic" href="img/06-settings.webp"><img loading="lazy" src="img/06-settings.webp" alt="Settings"></a>
+        <figcaption>
+          <h3><span class="num">9</span>Settings</h3>
+          <p>The gear at the top right of home. Music, Sound and Vibration switches; progress is saved on the device only.</p>
+          <p class="dev">Capture <code>06-settings</code><br>Code <code>UI/Popups.cs Settings</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="21-fuel">
+        <a class="pic" href="img/21-fuel.webp"><img loading="lazy" src="img/21-fuel.webp" alt="Fuel"></a>
+        <figcaption>
+          <h3><span class="num">10</span>Fuel</h3>
+          <p>Tap the fuel counter at the top left, or START with less than 5 fuel. Each run burns 5 fuel; one comes back every 6 minutes. The +5 button plays an ad.</p>
+          <p class="dev">Capture <code>21-fuel</code><br>Code <code>UI/Popups.cs FuelPopup</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="22-ad">
+        <a class="pic" href="img/22-ad.webp"><img loading="lazy" src="img/22-ad.webp" alt="Ad placeholder"></a>
+        <figcaption>
+          <h3><span class="num">11</span>Ad placeholder</h3>
+          <p>Any ad button (fuel +5, depot x2, revive, coins x2, the shop&#x27;s Free Crate). A 3-second stand-in: this build shows no real ads.</p>
+          <p class="dev">Capture <code>22-ad</code><br>Code <code>UI/UiFx.cs FakeAd</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="23-depot">
+        <a class="pic" href="img/23-depot.webp"><img loading="lazy" src="img/23-depot.webp" alt="Depot"></a>
+        <figcaption>
+          <h3><span class="num">12</span>Depot</h3>
+          <p>The Depot button on the left of home. The yard crew earns coins while the player is away, up to 8 hours. Collect, or x2 with an ad.</p>
+          <p class="dev">Capture <code>23-depot</code><br>Code <code>UI/Popups.cs DepotPopup</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="24-daily">
+        <a class="pic" href="img/24-daily.webp"><img loading="lazy" src="img/24-daily.webp" alt="Daily reward"></a>
+        <figcaption>
+          <h3><span class="num">13</span>Daily reward</h3>
+          <p>The Daily button on the left of home. Seven days of rewards (coins, gems, a crate on day 7) and Claim.</p>
+          <p class="dev">Capture <code>24-daily</code><br>Code <code>UI/Popups.cs DailyPopup</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="25-pass">
+        <a class="pic" href="img/25-pass.webp"><img loading="lazy" src="img/25-pass.webp" alt="Train Pass"></a>
+        <figcaption>
+          <h3><span class="num">14</span>Train Pass</h3>
+          <p>The Pass button on the right of home. A design note only: a season pass with free and premium reward tracks is not built in this mock.</p>
+          <p class="dev">Capture <code>25-pass</code><br>Code <code>UI/Popups.cs PassPopup</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="26-crew-gunner">
+        <a class="pic" href="img/26-crew-gunner.webp"><img loading="lazy" src="img/26-crew-gunner.webp" alt="Crew member (owned)"></a>
+        <figcaption>
+          <h3><span class="num">15</span>Crew member (owned)</h3>
+          <p>Crew tab, tap a crew member you have. Damage, range and shots per second (with the next level&#x27;s value), the level-up price in coins, and Ride to put them in the line-up.</p>
+          <p class="dev">Capture <code>26-crew-gunner</code><br>Code <code>UI/Pages.cs CrewPopup</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="27-crew-locked">
+        <a class="pic" href="img/27-crew-locked.webp"><img loading="lazy" src="img/27-crew-locked.webp" alt="Crew member (locked)"></a>
+        <figcaption>
+          <h3><span class="num">16</span>Crew member (locked)</h3>
+          <p>Crew tab, tap a locked crew member. The same stats, and a note that they are recruited by picking them from a level-up card in a run.</p>
+          <p class="dev">Capture <code>27-crew-locked</code><br>Code <code>UI/Pages.cs CrewPopup</code></p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+    <section id="g2">
+      <h2>In a run</h2>
+      <div class="grid">
+      <figure class="card" id="07-run">
+        <a class="pic" href="img/07-run.webp"><img loading="lazy" src="img/07-run.webp" alt="Run HUD"></a>
+        <figcaption>
+          <h3><span class="num">17</span>Run HUD</h3>
+          <p>After START. Top: the stage progress bar with its chest stops, the player level and XP bar, kills, coins and pause. Bottom right: the FULL STEAM button; once it has filled, a tap gives 5 seconds of double speed with the crew firing 1.5 times as fast. The crew on the roof shoot by themselves.</p>
+          <p class="dev">Capture <code>07-run</code><br>Code <code>UI/Tree.cs BuildHud, UI/RunScreens.cs OnHud</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="08-route">
+        <a class="pic" href="img/08-route.webp"><img loading="lazy" src="img/08-route.webp" alt="Fork: pick a track"></a>
+        <figcaption>
+          <h3><span class="num">18</span>Fork: pick a track</h3>
+          <p>Some distance before each fork. The sign drops in with a countdown in seconds and two side signs with what each track gives (repair, coins, double XP, a rare card). Tap a sign, or the left or right half of the screen. If time runs out the left track is taken.</p>
+          <p class="dev">Capture <code>08-route</code><br>Code <code>UI/RunScreens.cs ShowRoutes, RouteTick</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="09b-chosen">
+        <a class="pic" href="img/09b-chosen.webp"><img loading="lazy" src="img/09b-chosen.webp" alt="Fork, closer"></a>
+        <figcaption>
+          <h3><span class="num">19</span>Fork, closer</h3>
+          <p>The same fork a few seconds on: the countdown keeps running and the zombies keep coming. Under 3 seconds the clock turns red and shakes.</p>
+          <p class="dev">Capture <code>09b-chosen</code><br>Code <code>UI/RunScreens.cs RouteTick</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="09-route-late">
+        <a class="pic" href="img/09-route-late.webp"><img loading="lazy" src="img/09-route-late.webp" alt="Level-up during a fork"></a>
+        <figcaption>
+          <h3><span class="num">20</span>Level-up during a fork</h3>
+          <p>A level-up can come while the fork sign is up; the run pauses under the cards.</p>
+          <p class="dev">Capture <code>09-route-late</code><br>Code <code>UI/RunScreens.cs ShowCards</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="10-cards">
+        <a class="pic" href="img/10-cards.webp"><img loading="lazy" src="img/10-cards.webp" alt="Level up: pick one"></a>
+        <figcaption>
+          <h3><span class="num">21</span>Level up: pick one</h3>
+          <p>Each time the XP bar fills. Three cards: green CREW (recruit or level a crew member), blue UPGRADE (a boost for all crew), orange TRAIN (wagons, plow, armor). Reroll (once per run) plays a short ad and deals three new cards.</p>
+          <p class="dev">Capture <code>10-cards</code><br>Code <code>UI/RunScreens.cs ShowCards, CardEl, Reroll</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="10b-pick">
+        <a class="pic" href="img/10b-pick.webp"><img loading="lazy" src="img/10b-pick.webp" alt="Picking a card"></a>
+        <figcaption>
+          <h3><span class="num">22</span>Picking a card</h3>
+          <p>The tapped card grows while the other two fade out, then the run carries on.</p>
+          <p class="dev">Capture <code>10b-pick</code><br>Code <code>UI/RunScreens.cs PickCard</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="11-rare">
+        <a class="pic" href="img/11-rare.webp"><img loading="lazy" src="img/11-rare.webp" alt="Rare pick (gold cards)"></a>
+        <figcaption>
+          <h3><span class="num">23</span>Rare pick (gold cards)</h3>
+          <p>After a gold chest, or the Armory track at a fork. Gold cards, stronger than usual; each card shows its level step or effect.</p>
+          <p class="dev">Capture <code>11-rare</code><br>Code <code>UI/RunScreens.cs ShowCards</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="12a-chest-checkpoint">
+        <a class="pic" href="img/12a-chest-checkpoint.webp"><img loading="lazy" src="img/12a-chest-checkpoint.webp" alt="Checkpoint chest (silver)"></a>
+        <figcaption>
+          <h3><span class="num">24</span>Checkpoint chest (silver)</h3>
+          <p>The first chest stop on the progress bar. Tap to open: 30 coins.</p>
+          <p class="dev">Capture <code>12a-chest-checkpoint</code><br>Code <code>UI/RunScreens.cs OnChest, ChestOpen</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="12-chest">
+        <a class="pic" href="img/12-chest.webp"><img loading="lazy" src="img/12-chest.webp" alt="Gold chest"></a>
+        <figcaption>
+          <h3><span class="num">25</span>Gold chest</h3>
+          <p>The later chest stops on the progress bar. Tap to open: 60 coins, then a rare pick.</p>
+          <p class="dev">Capture <code>12-chest</code><br>Code <code>UI/RunScreens.cs OnChest, ChestOpen</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="13b-chest-coins">
+        <a class="pic" href="img/13b-chest-coins.webp"><img loading="lazy" src="img/13b-chest-coins.webp" alt="After the gold chest"></a>
+        <figcaption>
+          <h3><span class="num">26</span>After the gold chest</h3>
+          <p>The coins burst out and the rare pick of three gold cards comes up.</p>
+          <p class="dev">Capture <code>13b-chest-coins</code><br>Code <code>UI/RunScreens.cs ChestOpen</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="14-pause">
+        <a class="pic" href="img/14-pause.webp"><img loading="lazy" src="img/14-pause.webp" alt="Paused"></a>
+        <figcaption>
+          <h3><span class="num">27</span>Paused</h3>
+          <p>The pause button at the top right. Shows the riders and their levels, Resume, and Quit run.</p>
+          <p class="dev">Capture <code>14-pause</code><br>Code <code>UI/RunScreens.cs PauseMenu</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="15-bosswarn">
+        <a class="pic" href="img/15-bosswarn.webp"><img loading="lazy" src="img/15-bosswarn.webp" alt="Boss incoming"></a>
+        <figcaption>
+          <h3><span class="num">28</span>Boss incoming</h3>
+          <p>Before the boss loop at the end of the stage: the BOSS INCOMING / YETI KING warning. The red banner in this shot is a separate one, HORDE AHEAD!</p>
+          <p class="dev">Capture <code>15-bosswarn</code><br>Code <code>UI/RunScreens.cs BigWarn, OnBoss</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="16-boss">
+        <a class="pic" href="img/16-boss.webp"><img loading="lazy" src="img/16-boss.webp" alt="Boss fight"></a>
+        <figcaption>
+          <h3><span class="num">29</span>Boss fight</h3>
+          <p>The train circles the loop while the Yeti King attacks; the boss&#x27;s health bar sits under the progress bar.</p>
+          <p class="dev">Capture <code>16-boss</code><br>Code <code>UI/RunScreens.cs ShowBossBar</code></p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+    <section id="g3">
+      <h2>End of a run</h2>
+      <div class="grid">
+      <figure class="card" id="17-revive">
+        <a class="pic" href="img/17-revive.webp"><img loading="lazy" src="img/17-revive.webp" alt="Train wrecked (revive)"></a>
+        <figcaption>
+          <h3><span class="num">30</span>Train wrecked (revive)</h3>
+          <p>When the train&#x27;s HP runs out. A 5-second countdown: Revive plays an ad and puts the train back on the track; No thanks, or the countdown ending, goes to Run Over.</p>
+          <p class="dev">Capture <code>17-revive</code><br>Code <code>UI/RunScreens.cs LoseScreen</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="18-lose">
+        <a class="pic" href="img/18-lose.webp"><img loading="lazy" src="img/18-lose.webp" alt="Run over"></a>
+        <figcaption>
+          <h3><span class="num">31</span>Run over</h3>
+          <p>After the revive box. How far along the stage the train got, zombies killed, level reached, best combo, and the coins won. Coins x2 plays an ad; Back to depot goes home.</p>
+          <p class="dev">Capture <code>18-lose</code><br>Code <code>UI/RunScreens.cs EndRun</code></p>
+        </figcaption>
+      </figure>
+      <figure class="card" id="20-win">
+        <a class="pic" href="img/20-win.webp"><img loading="lazy" src="img/20-win.webp" alt="Victory"></a>
+        <figcaption>
+          <h3><span class="num">32</span>Victory</h3>
+          <p>After beating the boss. Stars by the engine&#x27;s HP left (over 66% three, over 33% two, else one), the same numbers as Run Over, the coins won, Coins x2 (ad) and Continue.</p>
+          <p class="dev">Capture <code>20-win</code><br>Code <code>UI/RunScreens.cs EndRun</code></p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+    <section id="messages">
+      <h2>Toasts and banners</h2>
+      <p class="lead">Short messages that are not screens of their own. Toasts are the small dark labels; banners are the big coloured words across the middle of a run.</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Kind</th><th>Text</th><th>When it shows</th><th class="dev">Code</th></tr></thead>
+        <tbody><tr><td><span class="kind toast">Toast</span></td><td class="say">Tap START to roll out!</td><td>Home, on a new save before the first run</td><td class="dev"><code>UI/Lobby.cs ShowLobby</code></td></tr><tr><td><span class="kind toast">Toast</span></td><td class="say">Chapter 1 is the first one</td><td>Home, the chapter&#x27;s left arrow</td><td class="dev"><code>UI/Lobby.cs BindLobby</code></td></tr><tr><td><span class="kind toast">Toast</span></td><td class="say">Clear Frost Line to open Chapter 2</td><td>Home, the chapter&#x27;s right arrow</td><td class="dev"><code>UI/Lobby.cs BindLobby</code></td></tr><tr><td><span class="kind toast">Toast</span></td><td class="say">Not enough coins</td><td>Crew popup level-up, or a Train upgrade, without the coins</td><td class="dev"><code>UI/Pages.cs CrewPopup, TrainPage</code></td></tr><tr><td><span class="kind toast">Toast</span></td><td class="say">Someone has to ride!</td><td>Crew popup, taking the last rider out of the line-up</td><td class="dev"><code>UI/Pages.cs CrewPopup</code></td></tr><tr><td><span class="kind toast">Toast</span></td><td class="say">Not enough gems</td><td>Shop, a gem offer without the gems</td><td class="dev"><code>UI/Pages.cs ShopPage</code></td></tr><tr><td><span class="kind toast">Toast</span></td><td class="say">Mock build: no real purchases</td><td>Shop, an offer with a money price</td><td class="dev"><code>UI/Pages.cs ShopPage</code></td></tr><tr><td><span class="kind toast">Toast</span></td><td class="say">Yeti King waits after station 6</td><td>Rails map, tapping the boss</td><td class="dev"><code>UI/Pages.cs RailsPage</code></td></tr><tr><td><span class="kind toast">Toast</span></td><td class="say">Clear station N first</td><td>Rails map, tapping a station that is not open yet</td><td class="dev"><code>UI/Pages.cs RailsPage</code></td></tr><tr><td><span class="kind toast">Toast</span></td><td class="say">N stars opens this chest</td><td>Rails map, tapping a star chest</td><td class="dev"><code>UI/Pages.cs RailsPage</code></td></tr><tr><td><span class="kind toast">Toast</span></td><td class="say">Convoy: link up with 3 trains to beat the Yeti King. A design idea, not in this mock</td><td>Rails map, the Convoy button</td><td class="dev"><code>UI/Pages.cs RailsPage</code></td></tr><tr><td><span class="kind toast">Toast</span></td><td class="say">Auto-picked the left track</td><td>A fork whose countdown ran out</td><td class="dev"><code>UI/RunScreens.cs OnChosen</code></td></tr><tr><td><span class="kind banner">Banner</span></td><td class="say">ROLL OUT!</td><td>The start of every run</td><td class="dev"><code>UI/RunScreens.cs StartRun</code></td></tr><tr><td><span class="kind banner">Banner</span></td><td class="say">REPAIR YARD / SUPPLY DUMP / HORDE ROAD / ARMORY</td><td>The track taken at a fork</td><td class="dev"><code>UI/RunScreens.cs OnChosen, Game/Data.cs ROUTES</code></td></tr><tr><td><span class="kind banner">Banner</span></td><td class="say">DOUBLE XP!</td><td>Entering the Horde Road</td><td class="dev"><code>Game/Run.Spawn.cs</code></td></tr><tr><td><span class="kind banner">Banner</span></td><td class="say">TRAIN REPAIRED!</td><td>Entering the Repair Yard</td><td class="dev"><code>Game/Run.Spawn.cs</code></td></tr><tr><td><span class="kind banner">Banner</span></td><td class="say">HORDE AHEAD!</td><td>A big zombie wave</td><td class="dev"><code>Game/Run.Spawn.cs</code></td></tr><tr><td><span class="kind banner">Banner</span></td><td class="say">◀ AMBUSH LEFT / AMBUSH RIGHT ▶</td><td>Zombies from one side</td><td class="dev"><code>Game/Run.Spawn.cs</code></td></tr><tr><td><span class="kind banner">Banner</span></td><td class="say">BRUTE INCOMING! / TWO BRUTES!</td><td>A brute (big zombie) wave</td><td class="dev"><code>Game/Run.Spawn.cs</code></td></tr><tr><td><span class="kind banner">Banner</span></td><td class="say">NEW WAGON!</td><td>A New Wagon card adds a wagon</td><td class="dev"><code>Game/Run.Shots.cs</code></td></tr><tr><td><span class="kind banner">Banner</span></td><td class="say">FULL STEAM!</td><td>Tapping the full FULL STEAM button</td><td class="dev"><code>UI/RunScreens.cs BindInput</code></td></tr><tr><td><span class="kind banner">Banner</span></td><td class="say">BOSS DOWN!</td><td>The Yeti King beaten</td><td class="dev"><code>UI/RunScreens.cs OnBossDown</code></td></tr><tr><td><span class="kind banner">Banner</span></td><td class="say">BACK ON TRACK!</td><td>After a revive</td><td class="dev"><code>UI/RunScreens.cs LoseScreen</code></td></tr></tbody>
+      </table></div>
+    </section>
+</main>
+<footer>
+  Tap a picture to see it full size. "Capture" is the still's name in the screen tour (Tools/tour/gen.py and
+  Tools/ui-pages/make.sh); "Code" is under Assets/Scripts in the Unity project.
+</footer>
+<div id="view"><img alt=""></div>
+<script>
+  const view = document.getElementById('view'), big = view.querySelector('img');
+  document.querySelectorAll('.pic').forEach(a => a.onclick = e => {
+    e.preventDefault(); big.src = a.href; view.classList.add('on');
+  });
+  view.onclick = () => view.classList.remove('on');
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') view.classList.remove('on'); });
+</script>
+</body>
+</html>

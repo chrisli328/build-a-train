@@ -1,5 +1,80 @@
-<!doctype html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
 <meta charset="utf-8">
-<title>Build A Train</title>
-<meta http-equiv="refresh" content="0; url=html/">
-<p>The Unity build is being published. Meanwhile, <a href="html/">play the HTML prototype</a>.</p>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#16204a">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Build A Train (Unity playtest build)</title>
+<!-- the share card; Tools/publish-web/publish.sh puts the site's address in place of https://chrisli328.github.io/build-a-train/ -->
+<meta name="description" content="Ride an armoured train through the zombie snowlands. Your crew shoots by itself, you pick the track. Unity playtest build.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Build A Train (Unity playtest build)">
+<meta property="og:description" content="Ride an armoured train through the zombie snowlands. Your crew shoots by itself, you pick the track. Unity playtest build.">
+<meta property="og:url" content="https://chrisli328.github.io/build-a-train/">
+<meta property="og:image" content="https://chrisli328.github.io/build-a-train/TemplateData/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="apple-touch-icon" href="TemplateData/icon-180.png">
+<link rel="icon" href="TemplateData/icon-180.png">
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #0d1430; overflow: hidden; touch-action: none; }
+  #unity-canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; background: #0d1430; outline: none; }
+  /* the download screen: the game's splash in a phone-shaped box until Unity draws its own loading screen */
+  #boot { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #0d1430;
+          transition: opacity .4s; z-index: 2; }
+  #boot.done { opacity: 0; pointer-events: none; }
+  #boot .phone { position: relative; height: 100%; max-width: 100%; aspect-ratio: 430 / 932; overflow: hidden;
+                 background: #16204a url(TemplateData/splash.webp) 50% 0 / cover; }
+  #boot .foot { position: absolute; left: 0; right: 0; bottom: 0; padding: 18% 8% 9%;
+                background: linear-gradient(transparent, rgba(11,18,48,.6) 35%, rgba(11,18,48,.9));
+                display: flex; flex-direction: column; align-items: center; gap: 10px;
+                font: 600 15px/1.3 system-ui, -apple-system, "Segoe UI", sans-serif; color: #fff; text-align: center; }
+  #boot .bar { width: 100%; height: 14px; border-radius: 7px; background: rgba(255,255,255,.18); overflow: hidden;
+               box-shadow: inset 0 2px 0 rgba(0,0,0,.25); }
+  #boot .bar i { display: block; height: 100%; width: 4%; border-radius: 7px; background: linear-gradient(#ffe46b, #ffb21f);
+                 transition: width .25s ease-out; }
+  #boot .err { color: #ffb4b4; }
+  #boot .ver { font-weight: 400; font-size: 12px; opacity: .75; }
+  #boot .ver a { color: #ffe46b; }
+</style>
+</head>
+<body>
+<canvas id="unity-canvas" tabindex="-1"></canvas>
+<div id="boot"><div class="phone"><div class="foot">
+  <div class="bar"><i></i></div>
+  <div class="msg">Loading the Unity build&hellip;</div>
+  <div class="ver" id="ver"></div>
+</div></div></div>
+<script src="Build/publish-web.loader.js"></script>
+<script>
+  const boot = document.getElementById('boot'), fill = boot.querySelector('.bar i'), msg = boot.querySelector('.msg');
+  // version.json sits next to this page on the published site (Tools/publish-web writes it): which commit this build is
+  fetch('version.json', { cache: 'no-store' }).then((r) => r.ok ? r.json() : null).then((v) => {
+    if (!v || !v.commit) return;
+    document.getElementById('ver').innerHTML = 'Unity build of commit ' + v.commit + ' (' + v.date + ')<br>' +
+      '<a href="ui/">All UI screens</a> &nbsp; <a href="html/">HTML prototype</a>';
+  }).catch(() => {});
+  createUnityInstance(document.getElementById('unity-canvas'), {
+    arguments: [],
+    dataUrl: "Build/publish-web.data.unityweb",
+    frameworkUrl: "Build/publish-web.framework.js.unityweb",
+    codeUrl: "Build/publish-web.wasm.unityweb",
+    streamingAssetsUrl: "StreamingAssets",
+    companyName: "FINIFUGU",
+    productName: "Build A Train",
+    productVersion: "1.0",
+  }, (p) => {
+    fill.style.width = Math.max(4, Math.round(p * 100)) + '%';
+    msg.textContent = p < 0.9 ? 'Loading the Unity build… ' + Math.round(p * 100) + '%' : 'Starting…';
+  }).then(() => {
+    boot.classList.add('done');
+    setTimeout(() => boot.remove(), 500);
+  }).catch((e) => {
+    msg.classList.add('err');
+    msg.textContent = 'This browser could not start the game: ' + e;
+  });
+</script>
+</body>
+</html>
